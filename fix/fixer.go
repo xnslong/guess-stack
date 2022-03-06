@@ -1,4 +1,4 @@
-package stack_fix
+package fix
 
 type Fixer interface {
 	Fix(paths []Path)
