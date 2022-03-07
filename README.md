@@ -27,7 +27,7 @@ then we guess stack A should have trimmed root elements the same as those in sta
 
 The longer the overlapping part is, the more trustable the guess is.
 
-# Install
+# Installation
 
 ```bash
 go get github.com/xnslong/guess-stack/guess-pprof
@@ -35,7 +35,7 @@ go get github.com/xnslong/guess-stack/guess-pprof
 
 # Usage
 
-```bash
+```
 Usage of ./guess-pprof:
   -i string
         input file (default "-")
