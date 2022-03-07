@@ -9,10 +9,11 @@ type CommonRootFixer struct {
 const NonExistIndex = -1
 
 type Joint struct {
-	CurrentIdx  int
-	JoinPathIdx int
-	JoinNodeIdx int
-	CommonCount int
+	CurrentIdx      int
+	JoinPathIdx     int
+	JoinNodeIdx     int
+	CommonCount     int
+	RootJoinPathIdx int
 }
 
 type JointSlice []*Joint
@@ -59,63 +60,164 @@ func Path2Nodes(pn []PathNode) *Node {
 	return n
 }
 
+type ComputePath struct {
+	Path  Path
+	Joint *Joint
+	Node  *Node
+}
+
+func (c *ComputePath) ResetPath() {
+	c.Path.SetPath(Nodes2Path(c.Node))
+}
+
+func maxOverlaps(n1, n2 *Node) (begin, length int) {
+	p1 := Nodes2Path(n1)
+	p2 := Nodes2Path(n2)
+
+	begin, length = maxOverlapsForPathNodeArray(p1, p2)
+
+	return
+}
+
+func maxOverlapsForPathNodeArray(p1, p2 []PathNode) (begin, length int) {
+	if len(p2) == 0 {
+		return
+	}
+
+	p2 = p2[1:]
+	for len(p2) > 0 {
+		l := commonPrefixLen(p1, p2)
+		if l > length {
+			length = l
+			begin = len(p2)
+		}
+		p2 = p2[1:]
+	}
+	return
+}
+
+func computeJoint(p0 *ComputePath, all []*ComputePath, accept func(path *ComputePath) bool) {
+	for _, path := range all {
+		if p0.Joint.CurrentIdx != path.Joint.CurrentIdx && accept(path) {
+			begin, length := maxOverlaps(p0.Node, path.Node)
+			if length > p0.Joint.CommonCount {
+				p0.Joint.CommonCount = length
+				p0.Joint.JoinPathIdx = path.Joint.CurrentIdx
+				p0.Joint.JoinNodeIdx = begin
+			}
+		}
+	}
+
+}
+
 func (c *CommonRootFixer) Fix(paths []Path) {
-	joints := InitJoints(paths)
+	computePaths := InitComputePath(paths)
 
-	ComputeJoints(paths, joints)
-	nodes := PathToNodes(paths)
+	ComputeJoints(computePaths)
 
-	natureJoints := make([]*Joint, len(paths))
-	copy(natureJoints, joints)
-
+	joints := ExtractJoints(computePaths)
 	sort.Stable(JointSlice(joints))
+
+	joinedJoints := joints[:0]
 
 	for len(joints) > 0 {
 		j0 := joints[0]
-		joints = joints[1:]
-
-		currentNode := nodes[j0.CurrentIdx]
 
 		if j0.JoinPathIdx == NonExistIndex {
+			joints = joints[1:]
+			joinedJoints = append(joinedJoints, j0)
 			continue
 		}
 
 		if j0.CommonCount < c.CommonCount {
+			joints = joints[1:]
+			joinedJoints = append(joinedJoints, j0)
 			continue
 		}
 
-		jointNode := nodes[j0.JoinPathIdx]
-		currentRootNode := lastNode(currentNode)
+		currentNode := computePaths[j0.CurrentIdx]
+		currentRootNode := lastNode(currentNode.Node)
+		jointNode := computePaths[j0.JoinPathIdx]
 
-		if IsPointsTo(currentRootNode, jointNode) {
-			// TODO
+		if IsPointsTo(currentRootNode, jointNode.Node) {
 			*j0 = *initialJointFor(j0.CurrentIdx)
+			computeJoint(currentNode, computePaths, func(path *ComputePath) bool {
+				return path.Joint.RootJoinPathIdx != jointNode.Joint.RootJoinPathIdx
+			})
+			sort.Stable(JointSlice(joints))
 			continue
 		}
 
-		toSkip := j0.JoinNodeIdx
-		jointNode = SkipNodes(jointNode, toSkip)
-		currentRootNode.Parent = jointNode
-		paths[j0.CurrentIdx].SetPath(Nodes2Path(currentNode))
+
+		toJointNode := SkipNodes(jointNode.Node, j0.JoinNodeIdx)
+		currentRootNode.Parent = toJointNode
+
+		joints = joints[1:]
+		joinedJoints = append(joinedJoints, j0)
 
 		c := 0
 		for _, joint := range joints {
-			if joint.JoinPathIdx == j0.JoinPathIdx && between(joint.JoinNodeIdx, j0.JoinNodeIdx, j0.JoinNodeIdx+j0.CommonCount) {
-				compare(joint, paths[joint.CurrentIdx], j0.CurrentIdx, paths[j0.CurrentIdx])
+			if joint.JoinPathIdx == j0.JoinPathIdx &&
+				between(joint.JoinNodeIdx, j0.JoinNodeIdx, j0.JoinNodeIdx-j0.CommonCount) {
+
+				lastNode := lastNode(computePaths[joint.CurrentIdx].Node)
+
+				if IsPointsTo(currentRootNode, lastNode) {
+					*joint = *initialJointFor(joint.CurrentIdx)
+					unacceptable := make(map[int]bool)
+					computeJoint(computePaths[joint.CurrentIdx], computePaths, func(path *ComputePath) bool {
+						if unacceptable[path.Joint.RootJoinPathIdx] {
+							return false
+						}
+						if IsPointsTo(path.Node, lastNode) {
+							unacceptable[path.Joint.RootJoinPathIdx] = true
+							return false
+						}
+						return true
+					})
+				} else {
+					computeJoint(computePaths[joint.CurrentIdx], computePaths, func(path *ComputePath) bool {
+						return path.Joint.RootJoinPathIdx == j0.CurrentIdx
+					})
+				}
+
 				if joint.CurrentIdx == j0.CurrentIdx {
 					c++
 				}
 			}
 		}
-
 		if c > 0 {
 			sort.Stable(JointSlice(joints))
 		}
+
+		updateRootJoinPathIndex(j0, jointNode, joinedJoints)
 	}
 
-	for i, node := range nodes {
-		paths[i].SetPath(Nodes2Path(node))
+	for _, node := range computePaths {
+		node.Path.SetPath(Nodes2Path(node.Node))
 	}
+}
+
+func updateRootJoinPathIndex(original *Joint, target *ComputePath, toUpdate []*Joint) {
+	for _, joint := range toUpdate {
+		if joint.RootJoinPathIdx == original.CurrentIdx {
+			joint.RootJoinPathIdx = target.Joint.RootJoinPathIdx
+		}
+	}
+}
+
+func InitComputePath(paths []Path) []*ComputePath {
+	result := make([]*ComputePath, 0, len(paths))
+
+	for i, path := range paths {
+		result = append(result, &ComputePath{
+			Path:  path,
+			Joint: initialJointFor(i),
+			Node:  Path2Nodes(path.Path()),
+		})
+	}
+
+	return result
 }
 
 func SkipNodes(node *Node, toSkip int) *Node {
@@ -125,36 +227,34 @@ func SkipNodes(node *Node, toSkip int) *Node {
 	return node
 }
 
-func PathToNodes(paths []Path) []*Node {
-	nodes := make([]*Node, len(paths))
-	for i, path := range paths {
-		nodes[i] = Path2Nodes(path.Path())
-	}
-	return nodes
-}
-
-func ComputeJoints(paths []Path, joints []*Joint) {
+func ComputeJoints(paths []*ComputePath) {
 	for i, path := range paths {
 		for j, another := range paths {
 			if i != j {
-				compare(joints[i], path, j, another)
+				begin, length := maxOverlapsForPathNodeArray(path.Path.Path(), another.Path.Path())
+				if length > path.Joint.CommonCount {
+					path.Joint.JoinPathIdx = j
+					path.Joint.JoinNodeIdx = begin
+					path.Joint.CommonCount = length
+				}
 			}
 		}
 	}
 }
 
-func InitJoints(paths []Path) []*Joint {
+func ExtractJoints(paths []*ComputePath) []*Joint {
 	joints := make([]*Joint, len(paths))
 	for i := range joints {
-		joints[i] = initialJointFor(i)
+		joints[i] = paths[i].Joint
 	}
 	return joints
 }
 
 func initialJointFor(i int) *Joint {
 	return &Joint{
-		CurrentIdx:  i,
-		JoinPathIdx: NonExistIndex,
+		CurrentIdx:      i,
+		JoinPathIdx:     NonExistIndex,
+		RootJoinPathIdx: i,
 	}
 }
 
@@ -194,23 +294,6 @@ func between(i, l, u int) bool {
 		return false
 	}
 	return true
-}
-
-func compare(j *Joint, path Path, i int, another Path) {
-	current := path.Path()
-	nodes := another.Path()
-
-	c := 0
-	for len(nodes) > 0 {
-		l := commonPrefixLen(current, nodes)
-		if l > j.CommonCount {
-			j.JoinPathIdx = i
-			j.JoinNodeIdx = len(nodes)
-			j.CommonCount = l
-		}
-		nodes = nodes[1:]
-		c++
-	}
 }
 
 func commonPrefixLen(a1, a2 []PathNode) int {
