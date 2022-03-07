@@ -12,7 +12,6 @@ import (
 
 	"github.com/google/pprof/profile"
 	"github.com/xnslong/guess-stack/fix"
-	profile2 "github.com/xnslong/guess-stack/profile"
 )
 
 const DefaultStream = "-"
@@ -20,7 +19,7 @@ const DefaultStream = "-"
 var fixer fix.Fixer
 
 var (
-	overlapCountThreshold = flag.Int("overlap", 5, "trustable overlap count")
+	overlapCountThreshold = flag.Int("overlap", 5, "trustable overlap length. when the number of overlapping elements is less than the length, it's not considered trustable for guessing")
 	outputFile            = flag.String("o", DefaultStream, "output file")
 	inputFile             = flag.String("i", DefaultStream, "input file")
 	verbose               = flag.Bool("v", false, "show verbose info for debug")
@@ -68,7 +67,7 @@ func FixProfile(p *profile.Profile) {
 	var path []fix.Path
 
 	for _, sample := range p.Sample {
-		st := profile2.SampleToStackTrace(sample)
+		st := SampleToStackTrace(sample)
 
 		path = append(path, st)
 	}
@@ -76,17 +75,17 @@ func FixProfile(p *profile.Profile) {
 	fixer.Fix(path)
 
 	for j, sample := range p.Sample {
-		st := path[j].(*profile2.StackTrace)
+		st := path[j].(*StackTrace)
 
 		if len(st.Elements) != len(sample.Location) {
 			if *verbose {
-				beforeStack := profile2.SampleToStackTrace(sample)
+				beforeStack := SampleToStackTrace(sample)
 				log.Printf("#%d before: %s", j, beforeStack.String())
 				log.Printf("#%d after : %s", j, st.String())
 			}
 		}
 
-		profile2.StackTraceToSample(st, sample)
+		StackTraceToSample(st, sample)
 	}
 }
 

@@ -30,23 +30,22 @@ The longer the overlapping part is, the more trustable the guess is.
 # Install
 
 ```bash
-go get github.com/xnslong/guess-stack
+go get github.com/xnslong/guess-stack/guess-pprof
 ```
 
 # Usage
 
 ```bash
-./guess-stack -h
-Usage of ./guess-stack:
+Usage of ./guess-pprof:
   -i string
         input file (default "-")
   -o string
         output file (default "-")
   -overlap int
-        trustable overlap count (default 5)
+        trustable overlap length. when the number of overlapping elements is less than the length, it's not considered trustable for guessing (default 5)
   -v    show verbose info for debug
 ```
 
 ```bash
-./guess-stack -i before.pprof -o after.pprof
+./guess-pprof -i before.pprof -o after.pprof
 ```
