@@ -28,7 +28,9 @@ then we guess stack A should have trimmed some root elements the same as those i
 
 ![guess.png](doc/guess.png)
 
-The longer the overlapping part is, the more trustable the guess is.
+The longer the overlapping part is, the more trustable the guess is. 
+
+If you are interested in the algorithm to realize it, please refer to [algorithm](fix/README.md).
 
 # Installation
 
