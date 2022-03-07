@@ -42,7 +42,7 @@ func main() {
 
 	FixProfile(p)
 
-	recordOutput(p)
+	debugOutput(p)
 
 	err = WriteProfile(p)
 	if err != nil {
@@ -51,7 +51,7 @@ func main() {
 
 }
 
-func recordOutput(p *profile.Profile) {
+func debugOutput(p *profile.Profile) {
 	if !*verbose {
 		return
 	}
@@ -79,9 +79,8 @@ func FixProfile(p *profile.Profile) {
 		st := path[j].(*profile2.StackTrace)
 
 		if len(st.Elements) != len(sample.Location) {
-			beforeStack := profile2.SampleToStackTrace(sample)
-
 			if *verbose {
+				beforeStack := profile2.SampleToStackTrace(sample)
 				log.Printf("#%d before: %s", j, beforeStack.String())
 				log.Printf("#%d after : %s", j, st.String())
 			}
