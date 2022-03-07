@@ -1,26 +1,29 @@
 # README
 
 When [pprof](https://github.com/google/pprof) takes samples from a running program, 
-it will trim some stack elements from the root side if the stack is too deep.
+it will trim some stack elements from the root end if the stack is too deep.
 When one or more stack elements are trimmed from each stack, 
 the stacks will not be able to align with each other, 
-then the FlameGraph will be hard to read (the following 'before' graph). 
+then the FlameGraph will be hard to read (the following 'before.pprof' graph). 
 
-This tool will try to fix the pprof file by guessing the trimmed root nodes (the following 'After' graph).
+This tool will try to fix the pprof file by guessing the trimmed root elements (the following 'after.pprof' graph).
 
+```bash
+guess-pprof -i before.pprof -o after.pprof
+```
 
-Before:
+before.pprof:
 
-![before.png](doc/before.png)
+![before.pprof](doc/before.png)
 
-After:
+after.pprof:
 
-![after.png](doc/after.png)
+![after.pprof](doc/after.png)
 
 ## How to guess?
 
-When the root side elements of a stack (A) overlaps elements in another stack (B),
-then we guess stack A should have trimmed root elements the same as those in stack B under the overlapping elements
+Suppose we have 2 stacks in a graph: A & B. When the root end elements of a stack A overlaps elements in stack B,
+then we guess stack A should have trimmed some root elements the same as those in stack B under the overlapping elements
 (shown in the following 'guess' graph).
 
 ![guess.png](doc/guess.png)
