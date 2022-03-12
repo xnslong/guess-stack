@@ -9,23 +9,23 @@ import (
 
 type IntNode int
 
-func (i IntNode) EqualsTo(another PathNode) bool {
+func (i IntNode) EqualsTo(another StackNode) bool {
 	return i == another
 }
 
 type IntPath struct {
-	arr []PathNode
+	arr []StackNode
 }
 
-func (i *IntPath) Path() []PathNode {
+func (i *IntPath) Path() []StackNode {
 	return i.arr
 }
 
-func (i *IntPath) SetPath(path []PathNode) {
+func (i *IntPath) SetPath(path []StackNode) {
 	i.arr = path
 }
 
-func Print(p []Path) {
+func Print(p []Stack) {
 	fmt.Println("---- print paths ----")
 	for i, path := range p {
 		fmt.Print(i, " {")
@@ -37,11 +37,11 @@ func Print(p []Path) {
 	}
 }
 
-func makePath(ints [][]int) []Path {
-	result := make([]Path, 0, len(ints))
+func makePath(ints [][]int) []Stack {
+	result := make([]Stack, 0, len(ints))
 
 	for _, arr := range ints {
-		var path []PathNode
+		var path []StackNode
 		for _, v := range arr {
 			path = append(path, IntNode(v))
 		}
@@ -51,7 +51,7 @@ func makePath(ints [][]int) []Path {
 	return result
 }
 
-func pathToArray(path []Path) [][]int {
+func pathToArray(path []Stack) [][]int {
 	result := make([][]int, 0, len(path))
 
 	for _, p := range path {
@@ -135,6 +135,26 @@ func TestCommonRootFixer_SelectiveFix(t *testing.T) {
 		{4, 5, 6, 7},          // not to fix
 		{1, 2, 3, 4, 5, 6, 8}, // to fix
 		{1, 2, 3, 4, 5},
+	}
+
+	outArray := pathToArray(c2)
+	assert.Equal(t, expectOut, outArray)
+
+	Print(c2)
+}
+
+func TestCommonRootFixer_NoLoop(t *testing.T) {
+	paths := [][]int{
+		{2, 3, 4, 5, 6},
+		{4, 5, 6, 2, 3},
+	}
+
+	c2 := makePath(paths)
+	(&CommonRootFixer{2}).Fix(c2, []bool{true, true})
+
+	expectOut := [][]int{
+		{2, 3, 4, 5, 6},       // 2. not to join back to stack 2
+		{2, 3, 4, 5, 6, 2, 3}, // 1. join to stack 1
 	}
 
 	outArray := pathToArray(c2)

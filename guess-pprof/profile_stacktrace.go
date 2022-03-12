@@ -16,7 +16,7 @@ func (l *StackTraceElement) String() string {
 	return fmt.Sprintf("%d", l.ID)
 }
 
-func (l *StackTraceElement) EqualsTo(another fix.PathNode) bool {
+func (l *StackTraceElement) EqualsTo(another fix.StackNode) bool {
 	anotherLoc, ok := another.(*StackTraceElement)
 	if !ok {
 		return false
@@ -45,8 +45,8 @@ func (s *StackTrace) String() string {
 	return fmt.Sprintf("%s", s.Elements)
 }
 
-func (s *StackTrace) Path() []fix.PathNode {
-	pn := make([]fix.PathNode, 0, len(s.Elements))
+func (s *StackTrace) Path() []fix.StackNode {
+	pn := make([]fix.StackNode, 0, len(s.Elements))
 
 	for _, loc := range s.Elements {
 		pn = append(pn, loc)
@@ -55,7 +55,7 @@ func (s *StackTrace) Path() []fix.PathNode {
 	return pn
 }
 
-func (s *StackTrace) SetPath(path []fix.PathNode) {
+func (s *StackTrace) SetPath(path []fix.StackNode) {
 	v := s.Elements[:0]
 	for _, node := range path {
 		if loc, ok := node.(*StackTraceElement); ok {

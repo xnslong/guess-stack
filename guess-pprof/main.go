@@ -28,7 +28,7 @@ var (
 
 func init() {
 	flag.Parse()
-	fixer = &fix.CommonRootFixer{CommonCount: *overlapCountThreshold}
+	fixer = &fix.CommonRootFixer{MinOverlaps: *overlapCountThreshold}
 }
 
 func main() {
@@ -62,7 +62,7 @@ func debugOutput(p *profile.Profile) {
 }
 
 func FixProfile(p *profile.Profile) {
-	var path []fix.Path
+	var path []fix.Stack
 
 	for _, sample := range p.Sample {
 		st := SampleToStackTrace(sample)
@@ -88,7 +88,7 @@ func FixProfile(p *profile.Profile) {
 	}
 }
 
-func depthGreaterThanOrEqualTo(path []fix.Path, threshold int) []bool {
+func depthGreaterThanOrEqualTo(path []fix.Stack, threshold int) []bool {
 	toJoin := make([]bool, 0, len(path))
 	for _, stack := range path {
 		if len(stack.Path()) >= threshold {
