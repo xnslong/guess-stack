@@ -16,13 +16,14 @@ import (
 
 const DefaultStream = "-"
 
-var fixer fix.Fixer
+var fixer fix.StackFixer
 
 var (
 	overlapCountThreshold = flag.Int("overlap", 5, "trustable overlap length. when the number of overlapping elements is less than the length, it's not considered trustable for guessing")
 	outputFile            = flag.String("o", DefaultStream, "output file")
 	inputFile             = flag.String("i", DefaultStream, "input file")
 	verbose               = flag.Bool("v", false, "show verbose info for debug")
+	depth                 = flag.Int("d", 1, "only fix stack with depth greater than (or equal to) the threshold, because only deep stack may be trimmed")
 )
 
 func init() {
@@ -35,9 +36,6 @@ func main() {
 	if err != nil {
 		log.Panicf("open profile error: %v", err)
 	}
-
-	//marshal, err := json.MarshalIndent(p.Sample, "", "    ")
-	//ioutil.WriteFile("before.json", marshal, 0644)
 
 	FixProfile(p)
 
@@ -72,7 +70,8 @@ func FixProfile(p *profile.Profile) {
 		path = append(path, st)
 	}
 
-	fixer.Fix(path)
+	toJoin := depthGreaterThanOrEqualTo(path, *depth)
+	fixer.Fix(path, toJoin)
 
 	for j, sample := range p.Sample {
 		st := path[j].(*StackTrace)
@@ -87,6 +86,18 @@ func FixProfile(p *profile.Profile) {
 
 		StackTraceToSample(st, sample)
 	}
+}
+
+func depthGreaterThanOrEqualTo(path []fix.Path, threshold int) []bool {
+	toJoin := make([]bool, 0, len(path))
+	for _, stack := range path {
+		if len(stack.Path()) >= threshold {
+			toJoin = append(toJoin, true)
+		} else {
+			toJoin = append(toJoin, false)
+		}
+	}
+	return toJoin
 }
 
 func WriteProfile(p *profile.Profile) error {

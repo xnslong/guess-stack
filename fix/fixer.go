@@ -1,7 +1,7 @@
 package fix
 
-type Fixer interface {
-	Fix(paths []Path)
+type StackFixer interface {
+	Fix(paths []Path, toJoin []bool)
 }
 
 type PathNode interface {
