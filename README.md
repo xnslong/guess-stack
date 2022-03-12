@@ -41,7 +41,9 @@ go get github.com/xnslong/guess-stack/guess-pprof
 # Usage
 
 ```
-Usage of ./guess-pprof:
+Usage of guess-pprof:
+  -d int
+        only fix stack with depth greater than (or equal to) the threshold, because only deep stack may be trimmed (default 1)
   -i string
         input file (default "-")
   -o string

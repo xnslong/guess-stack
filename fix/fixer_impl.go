@@ -110,10 +110,10 @@ func computeJoint(p0 *ComputePath, all []*ComputePath, accept func(path *Compute
 
 }
 
-func (c *CommonRootFixer) Fix(paths []Path) {
+func (c *CommonRootFixer) Fix(paths []Path, toJoin []bool) {
 	computePaths := InitComputePath(paths)
 
-	ComputeJoints(computePaths)
+	ComputeJoints(computePaths, toJoin)
 
 	joints := ExtractJoints(computePaths)
 	sort.Stable(JointSlice(joints))
@@ -148,7 +148,6 @@ func (c *CommonRootFixer) Fix(paths []Path) {
 			continue
 		}
 
-
 		toJointNode := SkipNodes(jointNode.Node, j0.JoinNodeIdx)
 		currentRootNode.Parent = toJointNode
 
@@ -159,6 +158,10 @@ func (c *CommonRootFixer) Fix(paths []Path) {
 		for _, joint := range joints {
 			if joint.JoinPathIdx == j0.JoinPathIdx &&
 				between(joint.JoinNodeIdx, j0.JoinNodeIdx, j0.JoinNodeIdx-j0.CommonCount) {
+
+				if !toJoin[joint.CurrentIdx] {
+					continue
+				}
 
 				lastNode := lastNode(computePaths[joint.CurrentIdx].Node)
 
@@ -227,8 +230,11 @@ func SkipNodes(node *Node, toSkip int) *Node {
 	return node
 }
 
-func ComputeJoints(paths []*ComputePath) {
+func ComputeJoints(paths []*ComputePath, toJoin []bool) {
 	for i, path := range paths {
+		if !toJoin[i] {
+			continue
+		}
 		for j, another := range paths {
 			if i != j {
 				begin, length := maxOverlapsForPathNodeArray(path.Path.Path(), another.Path.Path())

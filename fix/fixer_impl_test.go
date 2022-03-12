@@ -75,7 +75,7 @@ func TestFix(t *testing.T) {
 	}
 
 	c1 := makePath(paths)
-	(&CommonRootFixer{1}).Fix(c1)
+	(&CommonRootFixer{1}).Fix(c1, []bool{true, true, true, true})
 	assert.Equal(t, [][]int{
 		{1, 2, 3, 4, 5, 6, 7},
 		{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
@@ -85,7 +85,7 @@ func TestFix(t *testing.T) {
 	Print(c1)
 
 	c2 := makePath(paths)
-	(&CommonRootFixer{5}).Fix(c2)
+	(&CommonRootFixer{5}).Fix(c2, []bool{true, true, true, true})
 	assert.Equal(t, [][]int{
 		{1, 2, 3, 4, 5, 6, 7},
 		{4, 5, 6, 7, 8, 9, 10, 11, 12},
@@ -104,13 +104,36 @@ func TestCommonRootFixer_Fix(t *testing.T) {
 	}
 
 	c2 := makePath(paths)
-	(&CommonRootFixer{2}).Fix(c2)
-
+	(&CommonRootFixer{2}).Fix(c2, []bool{true, true, true, true})
 
 	expectOut := [][]int{
 		{1, 2, 3, 4, 5, 6},
 		{1, 2, 3, 4, 5, 6, 7},
 		{1, 2, 3, 4, 5, 6, 8},
+		{1, 2, 3, 4, 5},
+	}
+
+	outArray := pathToArray(c2)
+	assert.Equal(t, expectOut, outArray)
+
+	Print(c2)
+}
+
+func TestCommonRootFixer_SelectiveFix(t *testing.T) {
+	paths := [][]int{
+		{2, 3, 4, 5, 6},
+		{4, 5, 6, 7},
+		{4, 5, 6, 8},
+		{1, 2, 3, 4, 5},
+	}
+
+	c2 := makePath(paths)
+	(&CommonRootFixer{2}).Fix(c2, []bool{true, false, true, true})
+
+	expectOut := [][]int{
+		{1, 2, 3, 4, 5, 6},    // to fix
+		{4, 5, 6, 7},          // not to fix
+		{1, 2, 3, 4, 5, 6, 8}, // to fix
 		{1, 2, 3, 4, 5},
 	}
 
