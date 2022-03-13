@@ -50,7 +50,7 @@ A = [e1, e2, e3]
 B = [e4, e5]
 ```
 
-We mark `A + B` as a list with all elements in `A` coming before all elements in `B`, shown as following:
+We mark `A + B` as a list concatenating `A` and `B` with all elements from `A` before `B`, shown as following:
 
 ```
 A+B = [e1, e2, e3, e4, e5]
