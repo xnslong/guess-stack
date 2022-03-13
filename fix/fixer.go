@@ -1,14 +1,14 @@
 package fix
 
 type StackFixer interface {
-	Fix(paths []Path, toJoin []bool)
+	Fix(paths []Stack, needFix []bool)
 }
 
-type PathNode interface {
-	EqualsTo(another PathNode) bool
+type StackNode interface {
+	EqualsTo(another StackNode) bool
 }
 
-type Path interface {
-	Path() []PathNode
-	SetPath(path []PathNode)
+type Stack interface {
+	Path() []StackNode
+	SetPath(path []StackNode)
 }
