@@ -16,7 +16,7 @@ import (
 
 const DefaultStream = "-"
 
-const Version = "v0.0.1"
+const Version = "v0.0.2"
 
 var fixer fix.StackFixer
 
