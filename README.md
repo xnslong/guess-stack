@@ -1,5 +1,7 @@
 # README
 
+[中文README](README-zh.md)
+
 When [pprof](https://github.com/google/pprof) takes samples from a running program, 
 it will trim some stack elements from the root end if the stack is too deep.
 When one or more stack elements are trimmed from each stack, 

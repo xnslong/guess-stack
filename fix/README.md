@@ -84,6 +84,23 @@ possible stack that stack `i` shares root elements with.
 
 Then we can guess the missing root for stacks with the max `MOR` to those with min `MOR`.
 
+
+## No Loop is allowed
+
+We can treat share root as building a tree by joining the whole stack to children list of element of another stack.
+
+We should ensure there be no loop in the final result. For example in the following graph, 
+we should avoid the 2nd & 3rd situation.
+
+Specifically:
+
+* Avoid self looping
+* Avoid join loop with other stacks
+
+![loop.png](../doc/loop.png)
+
+## Dynamically Compute
+
 Suppose `MOR(i, j) = (s, l)` is considered to be the best guess for stack `i`, i.e. stack `i` shares the root stack
 element of stack `j`, then the elements of stack `i` will be updated. then `MOR` of other stacks to stack `i` may need
 to be recalculated. We can assert the stacks need to be updated are those stack `k`s where `MOR(k, j)` is an upper sub
