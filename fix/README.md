@@ -1,108 +1,185 @@
 # README
 
-This document will specify the algorithm of guessing stacks.
+[中文README](README-zh.md)
 
-# Problem
+The current doc mainly describes the algorithm for guessing stack nodes.
 
-We present a call stack in a line in this document, with the `root` element on the left side, and the `leaf` element on
-the right side. The right stack element is always called by the left element. So, the left elements are more stable
-while the right elements are more transient in the stacks.
+# Question
 
-```
-Sn: f1, f2, f3, ..., fn
-
-  (root)            (leaf)
-```
-
-Suppose the stacks have various continuous elements trimmed from the `root` side, then the stacks cannot align to each
-other. We need to recover the original call stacks by filling the missing root elements, so that they can align to each
-other again.
-
-original (& the target of recovery)
+We represent a call stack from root to leaf as a list. Then the call order is the left calling the right. Therefore, the
+left side will be relatively more stable and the right side will be more transient.
 
 ```
-S1: f1, f2, f3, f4, f5, f6
-S2: f1, f2, f3, f4, f7
+Sn = [f1, f2, f3, ..., fn]
+    (root)            (leaf)
 ```
 
-after trimmed
+Assuming some consecutive nodes trimmed on the left side of each list, then the lists cannot align with each other any
+more. We need to fill in the trimmed nodes so that the lists can align with each other again.
+
+For example: original stack
 
 ```
-S1: f3, f4, f5, f6      (trimmed f1, f2)
-S2: f1, f2, f3, f4, f7
+S1 = [f1, f2, f3, f4, f5, f6, f8, f9]
+S2 = [f1, f2, f3, f4, f7]
+```
+
+Assuming that stack `S1` has nodes `f1, f2` on the left trimmed, it will become
+
+```
+S1 = [ f3, f4, f5, f6, f8, f9 ] // (with f1, f2 trimmed) 
+S2 = [ f1, f2, f3, f4, f7 ]
+```
+
+After recovering, it should be like the following
+
+```
+S1 = [ f1, f2, f3, f4, f5, f6, f8, f9 ]
+S2 = [ f1, f2, f3, f4, f7 ]
+```
+
+## Mark Agreement
+
+For the convenience of the following analysis, we make the following conventions for the representation of some
+attributes of the list itself.
+
+Given two lists
+
+```
+A = [e1, e2, e3]
+B = [e4, e5]
+```
+
+We mark `A + B` as a list with all elements in `A` coming before all elements in `B`, shown as following:
+
+```
+A+B = [e1, e2, e3, e4, e5]
+B+A = [e4, e5, e1, e2, e3]
+```
+
+mark `| A |` as the length of list `A` , for example:
+
+```
+|A| = 3
+|B| = 2
+|A+B| = 5
+|B+A| = 5
 ```
 
 # Analysis
 
-If 2 stacks share the same root stack elements, and some root elements of one stack is trimed, there is possibility
-where some of the shared root elements is preserved (the remainder). So the remainder root elements of the trimmed stack
-may overlap elements in the other stack.
-
-So, if we guess 2 stacks share the same root elements originally, then we can guess the trimmed root elements.
-
-e.g.
-
-If the root elements (`f3, f4`) of stack `S1` overlaps stack `S2` from the 3rd element. Then we guess the 2 stacks may
-share the same root elements where element `f1, f2` has been trimmed from the root of stack `S1`.
+If the roots of the two stacks are originally the same, that is
 
 ```
-S1:   ,   , f3, f4, f5, f6
-S2: f1, f2, f3, f4, f7
+S1 = A + A2
+S2 = A + A3
 ```
 
-The more elements the overlapping range contains, the more possible the guess is true.
+Where `A2, A3` have no common prefix.
 
-**So, we can guess the trimmed root elements from other stacks overlapped by the current stack's root**
+Assuming `A = A0 + A1`, and `A0` is trimmed from `S1`, then after trimmed:
+
+```
+S1 = A1 + A2
+S2 = A0 + A1 + A3
+```
+
+Then the remaining root `A1` should overlap with the middle list of `S2`.
+
+Therefore, we can guess that `A0` is trimmed from `S1` through the overlapping position in `S2`.
+
+The longer the overlapping `A1` is, the more likely this guess is true.
 
 # Solution
 
-If stack `S1`'s root elements overlaps `S2` with the longest range (with `l` elements) from the `s`-elements (from leaf)
-, we call it the `max overlapping range` (`MOR`), take it down as:
+If we can devide `S1` and `S2` in the following way, with `A1` has the longest length.
 
 ```
-MOR(S1, S2) = (s, l) // S1's root overlaps S2, from the s'th-element and ranges with l elements.
+S1 = A1 + A2
+S2 = A0 + A1 + A3
 ```
 
-if the max overlapping range of `S1`, `S2` contains `0` elements, the 2 stack may not be sharing the same root. We take
-it down as:
+Where `| A0 | > 0` and `A2` and `A3` have no common prefix node,
+
+Then the max overlapping range (`MOR`) is recorded as follows:
 
 ```
-MOR(S1, S2) = (s, 0)
+start : MORS(S1, S2) = |A1 + A3| // start of max overlapping range
+length: MORL(S1, S2) = | A1 |    // length of max overlapping range
 ```
 
-When there are many stacks (suppose `{S1, S2, S3, ... Sn}`), we can get the `max overlapping range` for a stack (`Si`)
-to each other stacks (`Sj, where j != i`) `MOR(i,j)`. The stack `j` with the longest MOR range length is the most
-possible stack that stack `i` shares root elements with.
+Among them
 
-| MOR | 1        | 2        | 3        | ... | n        | Possible MOR  |
-|-----|----------|----------|----------|-----|----------|---------------|
-| 1   | -        | MOR(1,2) | MOR(1,3) | ... | MOR(1,n) | max{MOR(1,k)} |
-| 2   | MOR(2,1) | -        | MOR(2,3) | ... | MOR(2,n) | max{MOR(2,k)} |
-| 3   | MOR(3,1) | MOR(3,2) | -        | ... | MOR(3,n) | max{MOR(3,k)} |
-| ... | ...      | ...      | ...      | ... | ...      | ...           |
-| n   | MOR(n,1) | MOR(n,2) | MOR(n,3) | ... | -        | max{MOR(n,k)} |
+* `| A1 + A3 |` is the distance from the starting position of the overlapping part to the leaf, which is used to record
+  the position of the overlapping part;
 
-Then we can guess the missing root for stacks with the max `MOR` to those with min `MOR`.
+* `| A1 |` is the length of the overlapping part itself.
 
+If `MORL (S1, S2) = 0` , then the two stack nodes do not overlap and they may not have the same root.
 
-## No Loop is allowed
+When there are multiple stacks (such as: `{S1, S2, S3,..., Sn}`), for `Si` , we can find `MORL` with any
+stack `Sj` (`MORL(i, j)` ).
 
-We can treat share root as building a tree by joining the whole stack to children list of element of another stack.
+Among them, when `MORL(i, j)` is the biggest, `Si` should have the same root as `Sj`.
 
-We should ensure there be no loop in the final result. For example in the following graph, 
-we should avoid the 2nd & 3rd situation.
+`MORL(i) = max{ MORL(i, Sj) }`, where `j != i`.
 
-Specifically:
+| MORL | 1           | 2           | 3           | ... | n         | max MORL                     |
+|------|-------------|-------------|-------------|-----|-----------|------------------------------|
+| 1    | -           | MORL(1,2)   | MORL(1,3)   | ... | MORL(1,n) | MORL(1) = max{MORL(1,k)}     |
+| 2    | MORL(2,1)   | -           | MORL(2,3)   | ... | MORL(2,n) | MORL(2) = max{MORL(2,k)}     |
+| 3    | MORL(3,1)   | MORL(3,2)   | -           | ... | MORL(3,n) | MORL(3) = max{MORL(3,k)}     |
+| ...  | ...         | ...         | ...         | ... | ...       | ...                          |
+| n    | MORL (n, 1) | MORL (n, 2) | MORL (n, 3) | ... | -         | MORL (n) = max {MORL (n, k)} |
 
-* Avoid self looping
-* Avoid join loop with other stacks
+We can fix the stacks `Si` in the order of `MORL(i)` from big to small.
+
+## Avoid Loop
+
+The above procedure of sharing root nodes can be understood here as constructing a tree.
+
+The process of sharing root nodes is to add one stack to the children list of a node of another stack. Then we need to
+make sure that you end up with a tree, with no loop in it.
 
 ![loop.png](../doc/loop.png)
 
-## Dynamically Compute
+This limitation sums up:
 
-Suppose `MOR(i, j) = (s, l)` is considered to be the best guess for stack `i`, i.e. stack `i` shares the root stack
-element of stack `j`, then the elements of stack `i` will be updated. then `MOR` of other stacks to stack `i` may need
-to be recalculated. We can assert the stacks need to be updated are those stack `k`s where `MOR(k, j)` is an upper sub
-range of `MOR(i,j)` (sub range nearing the leaf side).
+1. Self-overlap should not be allowed.
+2. A stack cannot share the root from other stack where it has transitively shared root from the current stack.
 
+## Dynamic calculation 'MOR'
+
+Assuming that the best guess of stack `Si` is to share root nodes of `Sj`, and it updated the stack, does any other
+stack need to update the `MOR`?
+
+The conclusion is: not needed
+
+**Proof as follows:**
+
+Assuming
+
+```
+Si = A1 + A2
+Sj = A0 + A1 + A3
+```
+
+Where the`A2` and `A3` lists do not have the common prefix. At this time `MORL(i, j) = | A1 |`. After fixing `Si` , we
+can know:
+
+```
+Si = A0 + A1 + A2
+```
+
+Assuming that `MORL(k)`of `Sk` need to be updated due to the fix of `Si` , the better `MORL(k)` must be from a range
+starting at a node in `A0` . Since we fixed by all stacks in the order `MORL` from big to small, we can know
+
+```
+MORL(k,j) <= MORL(k) < MORL(i) = | A1 |
+```
+
+So, for any sublist starts from `A0 + A1`, the overlapping list should be s sublist of `A0 + A1`. (otherwise it should
+have a bigger length than `| A1 |`, counter with the previous conclusion `MORL(k,j) < |A1|`)
+
+Therefore, it is certain that in the new `Si = A0 + A1 + A2` list, it will not produce a new longer overlapping list
+than the current `MORL (k, j) < = MORL (k)` overlapping list.
