@@ -11,11 +11,11 @@ guess-pprof -i before.pprof -o after.pprof
 
 修复前：before.pprof
 
-![before.pprof](doc/before.png)
+![before.pprof](doc/before.png "before")
 
 修复后：after.pprof
 
-![after.pprof](doc/after.png)
+![after.pprof](doc/after.png "after")
 
 ## 怎样补全栈节点？
 
@@ -25,7 +25,7 @@ guess-pprof -i before.pprof -o after.pprof
 
 这里重叠的栈节点部分越长，这个猜测就越准确。
 
-![guess.png](doc/guess.png)
+![guess.png](doc/guess.png "guess")
 
 如果你对实现算法感兴趣，可以参考[算法](fix/README-zh.md).
 
