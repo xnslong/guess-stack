@@ -148,7 +148,7 @@ This limitation sums up:
 1. Self-overlap should not be allowed.
 2. A stack cannot share the root from other stack where it has transitively shared root from the current stack.
 
-## Dynamic calculation 'MOR'
+## Not To Dynamic Calculation 'MOR'
 
 Assuming that the best guess of stack `Si` is to share root nodes of `Sj`, and it updated the stack, does any other
 stack need to update the `MOR`?
