@@ -98,22 +98,18 @@ func (c *CommonRootFixer) Fix(paths []Stack, needFix []bool) {
 		joinedStacks := UpdateRootForGroup(computeStacks, root, j0.JoinGroup, targetStack.JoinGroup)
 
 		// if target joins back and makes a loop join, reset it and re-compute later.
-		ResetGroupJointWhenHasLoop(computeStacks, j0.JoinGroup)
-
-		hasChange := ReComputeJoints(joints, computeStacks, joinedStacks, len(root))
-
-		if hasChange {
-			sort.Stable(JointSlice(joints))
-		}
+		ReComputeGroupJointWhenHasLoop(computeStacks, joinedStacks, joints, j0.JoinGroup)
 
 	}
 }
 
-func ResetGroupJointWhenHasLoop(computePaths []*ComputePath, toTest int) {
+func ReComputeGroupJointWhenHasLoop(computePaths []*ComputePath, stacks []*ComputePath, joints []*Joint, toTest int) {
 	groupJoint := computePaths[toTest].Joint
 	if groupJoint.JoinPathIdx != NonExistIndex {
 		if computePaths[groupJoint.JoinPathIdx].JoinGroup == groupJoint.CurrentIdx {
 			ResetJoint(groupJoint)
+			ReComputeJoint(computePaths[groupJoint.CurrentIdx], stacks)
+			sort.Stable(JointSlice(joints))
 		}
 	}
 }
@@ -137,18 +133,7 @@ func UpdateRootForGroup(computePaths []*ComputePath, root []StackNode, oldGroup 
 	return joinedStacks
 }
 
-func ReComputeJoints(joints []*Joint, computeStacks []*ComputePath, joinedStacks []*ComputePath, testLength int) bool {
-	hasChange := false
-	for _, joint := range joints {
-		changed := ReComputeJoint(computeStacks[joint.CurrentIdx], joinedStacks, testLength)
-		if changed {
-			hasChange = true
-		}
-	}
-	return hasChange
-}
-
-func ReComputeJoint(path *ComputePath, stacks []*ComputePath, startRange int) bool {
+func ReComputeJoint(path *ComputePath, stacks []*ComputePath) bool {
 	if !path.NeedFix {
 		return false
 	}
@@ -160,7 +145,7 @@ func ReComputeJoint(path *ComputePath, stacks []*ComputePath, startRange int) bo
 		if stack.JoinGroup == path.CurrentIdx {
 			continue
 		}
-		begin, length := maxOverlapsBeginWith(currentStack, stack.Path(), startRange)
+		begin, length := maxOverlapsBeginWith(currentStack, stack.Path())
 		if length > path.Joint.Overlaps {
 			path.JoinPathIdx = stack.CurrentIdx
 			path.JoinNodeIdx = begin
@@ -189,18 +174,17 @@ func ComputeJoints(paths []*ComputePath) {
 	}
 }
 
-func maxOverlapsBeginWith(stack []StackNode, path []StackNode, startRange int) (begin int, length int) {
+func maxOverlapsBeginWith(stack, path []StackNode) (begin, length int) {
 	if len(path) < 1 {
 		return NonExistIndex, 0
 	}
 
 	begin = NonExistIndex
 	length = 0
-	minRemainder := len(path) - startRange
 
 	path = path[1:]
 
-	for len(path) > minRemainder {
+	for len(path) > 0 {
 		oL := commonPrefixLen(stack, path)
 		if oL > length {
 			length = oL
