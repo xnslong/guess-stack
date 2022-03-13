@@ -1,19 +1,19 @@
 # README
 
-当使用 [pprof](https://github.com/google/pprof) 对一个运行的进程采样的时候，栈可能会因为太深而被截断导致根部的栈节点丢失。
-当采集的 pprof 文件中，每个栈都或多或少丢失了一些根部的栈节点，那么这些栈在火焰图中就没有办法对齐了，会很难分析。
+当使用 [pprof](https://github.com/google/pprof) 对一个运行的进程采样的时候，栈可能会因为太深而被截掉部分根部的栈节点。
+从而导致火焰图中，栈没有办法对齐，很难分析。
 
-当前工具就是通过补全这些被截断丢失的栈节点的方式，修复火焰图，使栈能重新对齐，辅助pprof的分析。
+当前工具就是通过猜测和补全这些被截断丢失的栈节点的方式，修复火焰图，使栈能重新对齐，便于pprof的分析。
 
 ```bash
 guess-pprof -i before.pprof -o after.pprof
 ```
 
-修复前：before.pprof:
+修复前：before.pprof
 
 ![before.pprof](doc/before.png)
 
-修复后：after.pprof:
+修复后：after.pprof
 
 ![after.pprof](doc/after.png)
 
