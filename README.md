@@ -56,5 +56,5 @@ Usage of guess-pprof:
 ```
 
 ```bash
-./guess-pprof -i before.pprof -o after.pprof
+guess-pprof -i before.pprof -o after.pprof
 ```
