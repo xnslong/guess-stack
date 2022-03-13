@@ -108,7 +108,7 @@ func ReComputeGroupJointWhenHasLoop(computePaths []*ComputePath, stacks []*Compu
 	if groupJoint.JoinPathIdx != NonExistIndex {
 		if computePaths[groupJoint.JoinPathIdx].JoinGroup == groupJoint.CurrentIdx {
 			ResetJoint(groupJoint)
-			ReComputeJoint(computePaths[groupJoint.CurrentIdx], stacks)
+			ReComputeJoint(computePaths[groupJoint.CurrentIdx], computePaths)
 			sort.Stable(JointSlice(joints))
 		}
 	}
@@ -145,7 +145,7 @@ func ReComputeJoint(path *ComputePath, stacks []*ComputePath) bool {
 		if stack.JoinGroup == path.CurrentIdx {
 			continue
 		}
-		begin, length := maxOverlapsBeginWith(currentStack, stack.Path())
+		begin, length := maxOverlapsForPathNodeArray(currentStack, stack.Path())
 		if length > path.Joint.Overlaps {
 			path.JoinPathIdx = stack.CurrentIdx
 			path.JoinNodeIdx = begin
@@ -172,31 +172,6 @@ func ComputeJoints(paths []*ComputePath) {
 			}
 		}
 	}
-}
-
-func maxOverlapsBeginWith(stack, path []StackNode) (begin, length int) {
-	if len(path) < 1 {
-		return NonExistIndex, 0
-	}
-
-	begin = NonExistIndex
-	length = 0
-
-	path = path[1:]
-
-	for len(path) > 0 {
-		oL := commonPrefixLen(stack, path)
-		if oL > length {
-			length = oL
-			begin = len(path)
-		}
-
-		if len(path) > 0 {
-			path = path[1:]
-		}
-	}
-
-	return
 }
 
 func GetRoot(node *ComputePath, leafCount int) []StackNode {

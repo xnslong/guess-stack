@@ -147,14 +147,16 @@ func TestCommonRootFixer_NoLoop(t *testing.T) {
 	paths := [][]int{
 		{2, 3, 4, 5, 6},
 		{4, 5, 6, 2, 3},
+		{1, 2, 4, 5},
 	}
 
 	c2 := makePath(paths)
-	(&CommonRootFixer{2}).Fix(c2, []bool{true, true})
+	(&CommonRootFixer{1}).Fix(c2, []bool{true, true, true})
 
 	expectOut := [][]int{
-		{2, 3, 4, 5, 6},       // 2. not to join back to stack 2
-		{2, 3, 4, 5, 6, 2, 3}, // 1. join to stack 1
+		{1, 2, 3, 4, 5, 6},       // step 2) will join stack 2
+		{1, 2, 3, 4, 5, 6, 2, 3}, // step 1) join to stack 1
+		{1, 2, 4, 5},             //
 	}
 
 	outArray := pathToArray(c2)
