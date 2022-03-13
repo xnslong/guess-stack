@@ -16,6 +16,8 @@ import (
 
 const DefaultStream = "-"
 
+const Version = "v0.0.1"
+
 var fixer fix.StackFixer
 
 var (
@@ -23,11 +25,16 @@ var (
 	outputFile            = flag.String("o", DefaultStream, "output file")
 	inputFile             = flag.String("i", DefaultStream, "input file")
 	verbose               = flag.Bool("v", false, "show verbose info for debug")
+	version               = flag.Bool("version", false, "show version")
 	depth                 = flag.Int("d", 1, "only fix stack with depth greater than (or equal to) the threshold, because only deep stack may be trimmed")
 )
 
 func init() {
 	flag.Parse()
+	if *version {
+		fmt.Println(os.Args[0], Version)
+		os.Exit(0)
+	}
 	fixer = &fix.CommonRootFixer{MinOverlaps: *overlapCountThreshold}
 }
 
