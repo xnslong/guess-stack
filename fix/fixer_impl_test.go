@@ -66,7 +66,31 @@ func pathToArray(path []Stack) [][]int {
 	return result
 }
 
-func TestFix(t *testing.T) {
+func TestCommonRootFixer_Fix(t *testing.T) {
+	paths := [][]int{
+		{2, 3, 4, 5, 6},
+		{4, 5, 6, 7},
+		{4, 5, 6, 8},
+		{1, 2, 3, 4, 5},
+	}
+
+	c2 := makePath(paths)
+	(&CommonRootFixer{2}).Fix(c2, []bool{true, true, true, true})
+
+	expectOut := [][]int{
+		{1, 2, 3, 4, 5, 6},
+		{1, 2, 3, 4, 5, 6, 7},
+		{1, 2, 3, 4, 5, 6, 8},
+		{1, 2, 3, 4, 5},
+	}
+
+	outArray := pathToArray(c2)
+	assert.Equal(t, expectOut, outArray)
+
+	Print(c2)
+}
+
+func TestCommonRootFixer_FixOnMinOverlaps(t *testing.T) {
 	paths := [][]int{
 		{1, 2, 3, 4, 5, 6, 7},
 		{6, 7, 8, 9, 10, 11, 12},
@@ -92,30 +116,6 @@ func TestFix(t *testing.T) {
 		{4, 5, 6, 7, 8, 9, 10},
 		{4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
 	}, pathToArray(c2))
-	Print(c2)
-}
-
-func TestCommonRootFixer_Fix(t *testing.T) {
-	paths := [][]int{
-		{2, 3, 4, 5, 6},
-		{4, 5, 6, 7},
-		{4, 5, 6, 8},
-		{1, 2, 3, 4, 5},
-	}
-
-	c2 := makePath(paths)
-	(&CommonRootFixer{2}).Fix(c2, []bool{true, true, true, true})
-
-	expectOut := [][]int{
-		{1, 2, 3, 4, 5, 6},
-		{1, 2, 3, 4, 5, 6, 7},
-		{1, 2, 3, 4, 5, 6, 8},
-		{1, 2, 3, 4, 5},
-	}
-
-	outArray := pathToArray(c2)
-	assert.Equal(t, expectOut, outArray)
-
 	Print(c2)
 }
 

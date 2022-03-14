@@ -44,23 +44,6 @@ func (c *ComputePath) AddRoot(root []StackNode) {
 	c.Stack.SetPath(newPath)
 }
 
-func maxOverlapsForPathNodeArray(p1, p2 []StackNode) (begin, length int) {
-	if len(p2) == 0 {
-		return
-	}
-
-	p2 = p2[1:]
-	for len(p2) > 0 {
-		l := commonPrefixLen(p1, p2)
-		if l > length {
-			length = l
-			begin = len(p2)
-		}
-		p2 = p2[1:]
-	}
-	return
-}
-
 func (c *CommonRootFixer) Fix(paths []Stack, needFix []bool) {
 	computeStacks := InitComputePath(paths, needFix)
 
@@ -95,20 +78,20 @@ func (c *CommonRootFixer) Fix(paths []Stack, needFix []bool) {
 		// update stacks in the old group:
 		// 1) add root
 		// 2) update group to the new group
-		joinedStacks := UpdateRootForGroup(computeStacks, root, j0.JoinGroup, targetStack.JoinGroup)
+		UpdateRootForGroup(computeStacks, root, j0.JoinGroup, targetStack.JoinGroup)
 
 		// if target joins back and makes a loop join, reset it and re-compute later.
-		ReComputeGroupJointWhenHasLoop(computeStacks, joinedStacks, joints, j0.JoinGroup)
+		ReComputeGroupJointWhenHasLoop(computeStacks, joints, j0.JoinGroup)
 
 	}
 }
 
-func ReComputeGroupJointWhenHasLoop(computePaths []*ComputePath, stacks []*ComputePath, joints []*Joint, toTest int) {
+func ReComputeGroupJointWhenHasLoop(computePaths []*ComputePath, joints []*Joint, toTest int) {
 	groupJoint := computePaths[toTest].Joint
 	if groupJoint.JoinPathIdx != NonExistIndex {
 		if computePaths[groupJoint.JoinPathIdx].JoinGroup == groupJoint.CurrentIdx {
 			ResetJoint(groupJoint)
-			ReComputeJoint(computePaths[groupJoint.CurrentIdx], computePaths)
+			ComputeJoint(computePaths[groupJoint.CurrentIdx], computePaths)
 			sort.Stable(JointSlice(joints))
 		}
 	}
@@ -121,63 +104,72 @@ func ResetJoint(joint *Joint) {
 	joint.Overlaps = 0
 }
 
-func UpdateRootForGroup(computePaths []*ComputePath, root []StackNode, oldGroup int, newGroup int) []*ComputePath {
-	var joinedStacks []*ComputePath
+func UpdateRootForGroup(computePaths []*ComputePath, root []StackNode, oldGroup int, newGroup int) {
 	for _, stack := range computePaths {
 		if stack.Joint.JoinGroup == oldGroup {
 			stack.AddRoot(root)
-			joinedStacks = append(joinedStacks, stack)
 			stack.JoinGroup = newGroup
 		}
 	}
-	return joinedStacks
+	return
 }
 
-func ReComputeJoint(path *ComputePath, stacks []*ComputePath) bool {
+func ComputeJoints(paths []*ComputePath) {
+	for _, path := range paths {
+		ComputeJoint(path, paths)
+	}
+}
+
+func ComputeJoint(path *ComputePath, stacks []*ComputePath) {
 	if !path.NeedFix {
-		return false
+		return
 	}
 
 	currentStack := path.Path()
 
-	changed := false
 	for _, stack := range stacks {
 		if stack.JoinGroup == path.CurrentIdx {
 			continue
 		}
-		begin, length := maxOverlapsForPathNodeArray(currentStack, stack.Path())
+		begin, length := maxOverlappingMiddleRange(currentStack, stack.Path())
 		if length > path.Joint.Overlaps {
 			path.JoinPathIdx = stack.CurrentIdx
 			path.JoinNodeIdx = begin
 			path.Overlaps = length
-			changed = true
 		}
 	}
-	return changed
+	return
 }
 
-func ComputeJoints(paths []*ComputePath) {
-	for i, path := range paths {
-		if !path.NeedFix {
-			continue
-		}
-		for j, another := range paths {
-			if i != j {
-				begin, length := maxOverlapsForPathNodeArray(path.Stack.Path(), another.Stack.Path())
-				if length > path.Joint.Overlaps {
-					path.Joint.JoinPathIdx = j
-					path.Joint.JoinNodeIdx = begin
-					path.Joint.Overlaps = length
-				}
-			}
-		}
+func maxOverlappingMiddleRange(p1, p2 []StackNode) (begin, length int) {
+	if len(p2) == 0 {
+		return
 	}
+
+	p2 = p2[1:]
+	for len(p2) > 0 {
+		l := commonPrefixLen(p1, p2)
+		if l > length {
+			length = l
+			begin = len(p2)
+		}
+		p2 = p2[1:]
+	}
+	return
 }
 
 func GetRoot(node *ComputePath, leafCount int) []StackNode {
 	stack := node.Stack.Path()
 	i := len(stack) - leafCount
 	return stack[:i]
+}
+
+func ExtractJoints(paths []*ComputePath) []*Joint {
+	joints := make([]*Joint, len(paths))
+	for i := range joints {
+		joints[i] = paths[i].Joint
+	}
+	return joints
 }
 
 func InitComputePath(paths []Stack, needFix []bool) []*ComputePath {
@@ -191,14 +183,6 @@ func InitComputePath(paths []Stack, needFix []bool) []*ComputePath {
 	}
 
 	return result
-}
-
-func ExtractJoints(paths []*ComputePath) []*Joint {
-	joints := make([]*Joint, len(paths))
-	for i := range joints {
-		joints[i] = paths[i].Joint
-	}
-	return joints
 }
 
 func initialJointFor(i int, needFix bool) *Joint {
