@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -10,27 +9,79 @@ import (
 	"os"
 	"path"
 
+	"github.com/akamensky/argparse"
 	"github.com/google/pprof/profile"
 	"github.com/xnslong/guess-stack/fix"
 )
 
 const DefaultStream = "-"
 
-const Version = "v1.0.0"
+const Version = "v1.0.1-SNAPSHOT"
 
 var fixer fix.StackFixer
 
 var (
-	overlapCountThreshold = flag.Int("overlap", 5, "trustable overlap length. when the number of overlapping elements is less than the length, it's not considered trustable for guessing")
-	outputFile            = flag.String("o", DefaultStream, "output file")
-	inputFile             = flag.String("i", DefaultStream, "input file")
-	verbose               = flag.Bool("v", false, "show verbose info for debug")
-	version               = flag.Bool("version", false, "show version")
-	depth                 = flag.Int("d", 1, "only fix stack with depth greater than (or equal to) the threshold, because only deep stack may be trimmed")
+	overlapCountThreshold *int
+	outputFile            *string
+	inputFile             *string
+	verbose               *bool
+	version               *bool
+	depth                 *int
+	root                  *int
+	verboseCounter        *int
 )
 
 func init() {
-	flag.Parse()
+	parser := argparse.NewParser("guess-pprof", "to guess the missing root nodes for deep stacks, so that the stacks can align with each other again")
+	inputFile = parser.String("i", "input", &argparse.Options{
+		Required: false,
+		Validate: nil,
+		Help:     "input pprof file. \"-\" means read from the standard input stream",
+		Default:  DefaultStream,
+	})
+	outputFile = parser.String("o", "output", &argparse.Options{
+		Required: false,
+		Validate: nil,
+		Help:     "output pprof file, \"-\" means write to the standard output stream",
+		Default:  DefaultStream,
+	})
+	overlapCountThreshold = parser.Int("", "overlap", &argparse.Options{
+		Required: false,
+		Validate: nil,
+		Help:     "the minimal overlapping call node count",
+		Default:  5,
+	})
+	depth = parser.Int("d", "depth", &argparse.Options{
+		Required: false,
+		Validate: nil,
+		Help:     "the minimal depth of the stack who may be trimmed (the deep stacks still remains deep after trimmed)",
+		Default:  1,
+	})
+	root = parser.Int("b", "base", &argparse.Options{
+		Required: false,
+		Validate: nil,
+		Help:     "number of the base nodes always existing for all stacks (such as the process name), no matter whether the root call nodes are trimmed",
+		Default:  0,
+	})
+	verboseCounter = parser.FlagCounter("v", "verbose", &argparse.Options{
+		Required: false,
+		Validate: nil,
+		Help:     "",
+		Default:  0,
+	})
+	version = parser.Flag("", "version", &argparse.Options{
+		Required: false,
+		Validate: nil,
+		Help:     "",
+		Default:  false,
+	})
+	parser.ExitOnHelp(true)
+	err := parser.Parse(os.Args)
+	if err != nil {
+		log.Println(err)
+		os.Exit(0)
+	}
+
 	if *version {
 		fmt.Println(os.Args[0], Version)
 		os.Exit(0)
@@ -39,24 +90,18 @@ func init() {
 }
 
 func main() {
-	p, err := OpenProfile()
-	if err != nil {
-		log.Panicf("open profile error: %v", err)
-	}
+	p := OpenProfile()
 
 	FixProfile(p)
 
 	debugOutput(p)
 
-	err = WriteProfile(p)
-	if err != nil {
-		log.Panicf("write profile error: %v", err)
-	}
+	WriteProfile(p)
 
 }
 
 func debugOutput(p *profile.Profile) {
-	if !*verbose {
+	if *verboseCounter < 2 {
 		return
 	}
 
@@ -72,7 +117,7 @@ func FixProfile(p *profile.Profile) {
 	var path []fix.Stack
 
 	for _, sample := range p.Sample {
-		st := SampleToStackTrace(sample)
+		st := SampleToStackTrace(sample, *root)
 
 		path = append(path, st)
 	}
@@ -84,8 +129,8 @@ func FixProfile(p *profile.Profile) {
 		st := path[j].(*StackTrace)
 
 		if len(st.Elements) != len(sample.Location) {
-			if *verbose {
-				beforeStack := SampleToStackTrace(sample)
+			if *verboseCounter >= 1 {
+				beforeStack := SampleToStackTrace(sample, 0)
 				log.Printf("#%d before: %s", j, beforeStack.String())
 				log.Printf("#%d after : %s", j, st.String())
 			}
@@ -107,46 +152,42 @@ func depthGreaterThanOrEqualTo(path []fix.Stack, threshold int) []bool {
 	return toJoin
 }
 
-func WriteProfile(p *profile.Profile) error {
-
+func WriteProfile(p *profile.Profile) {
 	var out io.Writer
 	if *outputFile == DefaultStream {
 		out = os.Stdout
 	} else {
-		outFile, err := os.OpenFile(*outputFile, os.O_CREATE|os.O_WRONLY, 0644)
+		file, err := os.OpenFile(*outputFile, os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
-			return fmt.Errorf("open file error: (file=%s) %w", *outputFile, err)
+			log.Panic("write profile error", err)
 		}
-
-		defer outFile.Close()
-		out = outFile
+		defer file.Close()
+		out = file
 	}
 
 	err := p.Write(out)
 	if err != nil {
-		return err
+		log.Panic("write profile error", err)
 	}
-
-	return nil
 }
 
-func OpenProfile() (*profile.Profile, error) {
+func OpenProfile() *profile.Profile {
 	var in io.Reader
 	if *inputFile == DefaultStream {
 		in = os.Stdin
 	} else {
-		inFile, err := os.Open(*inputFile)
+		file, err := os.OpenFile(*inputFile, os.O_RDONLY, 0644)
 		if err != nil {
-			return nil, fmt.Errorf("open file error: (file=%s) %w", *inputFile, err)
+			log.Panic("open profile error", err)
 		}
-
-		defer inFile.Close()
-		in = inFile
+		defer file.Close()
+		in = file
 	}
 
 	p, err := profile.Parse(in)
 	if err != nil {
-		return nil, fmt.Errorf("parse profile error: %w", err)
+		log.Panic("open profile error", err)
 	}
-	return p, nil
+
+	return p
 }

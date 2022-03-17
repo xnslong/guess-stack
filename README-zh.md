@@ -38,16 +38,28 @@ go get github.com/xnslong/guess-stack/guess-pprof
 # 使用
 
 ```
-Usage of guess-pprof:
-  -d int
-        only fix stack with depth greater than (or equal to) the threshold, because only deep stack may be trimmed (default 1)
-  -i string
-        input file (default "-")
-  -o string
-        output file (default "-")
-  -overlap int
-        trustable overlap length. when the number of overlapping elements is less than the length, it's not considered trustable for guessing (default 5)
-  -v    show verbose info for debug
+usage: guess-pprof [-h|--help] [-i|--input "<value>"] [-o|--output "<value>"]
+                   [--overlap <integer>] [-d|--depth <integer>] [-b|--base
+                   <integer>] [-v|--verbose <integer>] [--version]
+
+                   to guess the missing root nodes for deep stacks, so that the
+                   stacks can align with each other again
+
+Arguments:
+
+  -h  --help     Print help information
+  -i  --input    input pprof file. "-" means read from the standard input
+                 stream. Default: -
+  -o  --output   output pprof file, "-" means write to the standard output
+                 stream. Default: -
+      --overlap  the minimal overlapping call node count. Default: 5
+  -d  --depth    the minimal depth of the stack who may be trimmed (the deep
+                 stacks still remains deep after trimmed). Default: 1
+  -b  --base     number of the base nodes always existing for all stacks (such
+                 as the process name), no matter whether the root call nodes
+                 are trimmed. Default: 0
+  -v  --verbose 
+      --version 
 ```
 
 ```bash

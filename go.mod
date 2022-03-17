@@ -6,3 +6,5 @@ require (
 	github.com/google/pprof v0.0.0-20220218203455-0368bd9e19a7
 	github.com/stretchr/testify v1.7.0
 )
+
+require github.com/akamensky/argparse v1.3.1 // indirect
