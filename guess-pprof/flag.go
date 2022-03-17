@@ -58,7 +58,7 @@ func InitFlags() {
 		Help:     "",
 		Default:  0,
 	})
-	version = parser.Flag("", "version", &argparse.Options{
+	version = parser.Flag("V", "version", &argparse.Options{
 		Required: false,
 		Validate: nil,
 		Help:     "",
