@@ -38,6 +38,7 @@ func (l *StackTraceElement) EqualsTo(another fix.StackNode) bool {
 }
 
 type StackTrace struct {
+	Root     []*StackTraceElement
 	Elements []*StackTraceElement
 }
 
@@ -76,8 +77,9 @@ func reverse(elements []*StackTraceElement) {
 }
 
 func StackTraceToSample(st *StackTrace, target *profile.Sample) {
-	elem := make([]*StackTraceElement, len(st.Elements))
-	copy(elem, st.Elements)
+	elem := make([]*StackTraceElement, len(st.Elements)+len(st.Root))
+	copy(elem, st.Root)
+	copy(elem[len(st.Root):], st.Elements)
 
 	reverse(elem)
 
@@ -90,13 +92,17 @@ func StackTraceToSample(st *StackTrace, target *profile.Sample) {
 	target.Location = loc
 }
 
-func SampleToStackTrace(sample *profile.Sample) *StackTrace {
+func SampleToStackTrace(sample *profile.Sample, rootCount int) *StackTrace {
 	var v []*StackTraceElement
 	for _, location := range sample.Location {
 		v = append(v, &StackTraceElement{location})
 	}
 
 	reverse(v)
-	st := &StackTrace{v}
+
+	r := v[:rootCount]
+	s := v[rootCount:]
+
+	st := &StackTrace{Root: r, Elements: s}
 	return st
 }
