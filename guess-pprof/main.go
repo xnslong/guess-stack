@@ -18,7 +18,7 @@ var fixer fix.StackFixer
 
 func init() {
 	InitFlags()
-	fixer = &fix.CommonRootFixer{MinOverlaps: *overlapCountThreshold}
+	fixer = &fix.CommonRootFixer{MinOverlaps: *overlapFlag}
 }
 
 func main() {
@@ -48,12 +48,12 @@ func FixProfile(p *profile.Profile) {
 	var path []fix.Stack
 
 	for _, sample := range p.Sample {
-		st := SampleToStackTrace(sample, *root)
+		st := SampleToStackTrace(sample, *baseCount)
 
 		path = append(path, st)
 	}
 
-	toJoin := depthGreaterThanOrEqualTo(path, *depth)
+	toJoin := depthGreaterThanOrEqualTo(path, *minDepth)
 	fixer.Fix(path, toJoin)
 
 	for j, sample := range p.Sample {
