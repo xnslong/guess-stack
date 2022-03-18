@@ -1,6 +1,7 @@
-*/guess-pprof
+*/guess-*
 /output
 after.json
 before.json
 stack-fix
 *.pprof
+*.folded

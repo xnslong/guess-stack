@@ -1,0 +1,28 @@
+@startuml
+folder "FlameGraph" {
+    (flamegraph.svg)
+}
+
+folder "foled stacks" {
+    (fixed-folded)
+    (folded)
+}
+
+folder "a variety of profiles" {
+    (go pprof)
+    (java stack)
+    (perf data)
+    (...)
+}
+
+(go pprof) ----> (folded): stackcollapse-go.pl
+(java stack) ----> (folded): stackcollapse-jstack.pl
+(perf data) ----> (folded): stackcollapse-perf.pl
+(...) ----> (folded): stackcollapse-xxx.pl
+
+(folded) -> (fixed-folded): #red guess-fold
+
+(fixed-folded) --> (flamegraph.svg): flamegraph.pl
+(folded) --> (flamegraph.svg): flamegraph.pl
+
+@enduml

@@ -1,4 +1,4 @@
-package fix
+package core
 
 import (
 	"fmt"
@@ -75,7 +75,7 @@ func TestCommonRootFixer_Fix(t *testing.T) {
 	}
 
 	c2 := makePath(paths)
-	(&CommonRootFixer{2}).Fix(c2, []bool{true, true, true, true})
+	(&CommonRootFixer{2}).Fix(c2)
 
 	expectOut := [][]int{
 		{1, 2, 3, 4, 5, 6},
@@ -99,7 +99,7 @@ func TestCommonRootFixer_FixOnMinOverlaps(t *testing.T) {
 	}
 
 	c1 := makePath(paths)
-	(&CommonRootFixer{1}).Fix(c1, []bool{true, true, true, true})
+	(&CommonRootFixer{1}).Fix(c1)
 	assert.Equal(t, [][]int{
 		{1, 2, 3, 4, 5, 6, 7},
 		{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
@@ -109,7 +109,7 @@ func TestCommonRootFixer_FixOnMinOverlaps(t *testing.T) {
 	Print(c1)
 
 	c2 := makePath(paths)
-	(&CommonRootFixer{5}).Fix(c2, []bool{true, true, true, true})
+	(&CommonRootFixer{5}).Fix(c2)
 	assert.Equal(t, [][]int{
 		{1, 2, 3, 4, 5, 6, 7},
 		{4, 5, 6, 7, 8, 9, 10, 11, 12},
@@ -128,7 +128,7 @@ func TestCommonRootFixer_SelectiveFix(t *testing.T) {
 	}
 
 	c2 := makePath(paths)
-	(&CommonRootFixer{2}).Fix(c2, []bool{true, false, true, true})
+	(&CommonRootFixer{2}).Fix(c2)
 
 	expectOut := [][]int{
 		{1, 2, 3, 4, 5, 6},    // to fix
@@ -151,7 +151,7 @@ func TestCommonRootFixer_NoLoop(t *testing.T) {
 	}
 
 	c2 := makePath(paths)
-	(&CommonRootFixer{1}).Fix(c2, []bool{true, true, true})
+	(&CommonRootFixer{1}).Fix(c2)
 
 	expectOut := [][]int{
 		{1, 2, 3, 4, 5, 6},       // step 2) will join stack 2

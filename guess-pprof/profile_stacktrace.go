@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 
 	"github.com/google/pprof/profile"
-	"github.com/xnslong/guess-stack/fix"
+	"github.com/xnslong/guess-stack/core"
 )
 
 type StackTraceElement struct {
@@ -16,7 +17,7 @@ func (l *StackTraceElement) String() string {
 	return fmt.Sprintf("%d", l.ID)
 }
 
-func (l *StackTraceElement) EqualsTo(another fix.StackNode) bool {
+func (l *StackTraceElement) EqualsTo(another core.StackNode) bool {
 	anotherLoc, ok := another.(*StackTraceElement)
 	if !ok {
 		return false
@@ -38,16 +39,24 @@ func (l *StackTraceElement) EqualsTo(another fix.StackNode) bool {
 }
 
 type StackTrace struct {
-	Root     []*StackTraceElement
 	Elements []*StackTraceElement
+	needFix  bool
+}
+
+func (s *StackTrace) NeedFix() bool {
+	return s.needFix
+}
+
+func (s *StackTrace) SetNeedFix(need bool) {
+	s.needFix = need
 }
 
 func (s *StackTrace) String() string {
 	return fmt.Sprintf("%s", s.Elements)
 }
 
-func (s *StackTrace) Path() []fix.StackNode {
-	pn := make([]fix.StackNode, 0, len(s.Elements))
+func (s *StackTrace) Path() []core.StackNode {
+	pn := make([]core.StackNode, 0, len(s.Elements))
 
 	for _, loc := range s.Elements {
 		pn = append(pn, loc)
@@ -56,7 +65,7 @@ func (s *StackTrace) Path() []fix.StackNode {
 	return pn
 }
 
-func (s *StackTrace) SetPath(path []fix.StackNode) {
+func (s *StackTrace) SetPath(path []core.StackNode) {
 	v := s.Elements[:0]
 	for _, node := range path {
 		if loc, ok := node.(*StackTraceElement); ok {
@@ -68,6 +77,41 @@ func (s *StackTrace) SetPath(path []fix.StackNode) {
 	s.Elements = v
 }
 
+type Profile struct {
+	PProf  *profile.Profile
+	stacks []core.Stack
+}
+
+func (p *Profile) Stacks() []core.Stack {
+	return p.stacks
+}
+
+func (p *Profile) WriteTo(writer io.Writer) error {
+	for i, stack := range p.stacks {
+		st := stack.(*StackTrace)
+		StackTraceToSample(st, p.PProf.Sample[i])
+	}
+
+	return p.PProf.Write(writer)
+}
+
+func (p *Profile) ReadFrom(reader io.Reader) error {
+	pprof, err := profile.Parse(reader)
+	if err != nil {
+		return fmt.Errorf("open profile error: %w", err)
+	}
+
+	stacks := make([]core.Stack, 0, len(pprof.Sample))
+	for _, sample := range pprof.Sample {
+		stacks = append(stacks, SampleToStackTrace(sample))
+	}
+
+	p.PProf = pprof
+	p.stacks = stacks
+
+	return nil
+}
+
 func reverse(elements []*StackTraceElement) {
 	for i, j := 0, len(elements)-1; i < j; {
 		elements[i], elements[j] = elements[j], elements[i]
@@ -77,9 +121,8 @@ func reverse(elements []*StackTraceElement) {
 }
 
 func StackTraceToSample(st *StackTrace, target *profile.Sample) {
-	elem := make([]*StackTraceElement, len(st.Elements)+len(st.Root))
-	copy(elem, st.Root)
-	copy(elem[len(st.Root):], st.Elements)
+	elem := make([]*StackTraceElement, len(st.Elements))
+	copy(elem, st.Elements)
 
 	reverse(elem)
 
@@ -92,7 +135,7 @@ func StackTraceToSample(st *StackTrace, target *profile.Sample) {
 	target.Location = loc
 }
 
-func SampleToStackTrace(sample *profile.Sample, rootCount int) *StackTrace {
+func SampleToStackTrace(sample *profile.Sample) *StackTrace {
 	var v []*StackTraceElement
 	for _, location := range sample.Location {
 		v = append(v, &StackTraceElement{location})
@@ -100,9 +143,6 @@ func SampleToStackTrace(sample *profile.Sample, rootCount int) *StackTrace {
 
 	reverse(v)
 
-	r := v[:rootCount]
-	s := v[rootCount:]
-
-	st := &StackTrace{Root: r, Elements: s}
+	st := &StackTrace{Elements: v, needFix: true}
 	return st
 }

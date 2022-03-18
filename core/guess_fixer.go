@@ -1,4 +1,4 @@
-package fix
+package core
 
 import "sort"
 
@@ -14,7 +14,6 @@ type Joint struct {
 	JoinNodeIdx int
 	Overlaps    int
 	JoinGroup   int
-	NeedFix     bool
 }
 
 type JointSlice []*Joint
@@ -44,8 +43,8 @@ func (c *ComputePath) AddRoot(root []StackNode) {
 	c.Stack.SetPath(newPath)
 }
 
-func (c *CommonRootFixer) Fix(paths []Stack, needFix []bool) {
-	computeStacks := InitComputePath(paths, needFix)
+func (c *CommonRootFixer) Fix(paths []Stack) {
+	computeStacks := InitComputePath(paths)
 
 	ComputeJoints(computeStacks)
 
@@ -121,7 +120,7 @@ func ComputeJoints(paths []*ComputePath) {
 }
 
 func ComputeJoint(path *ComputePath, stacks []*ComputePath) {
-	if !path.NeedFix {
+	if !path.NeedFix() {
 		return
 	}
 
@@ -172,25 +171,24 @@ func ExtractJoints(paths []*ComputePath) []*Joint {
 	return joints
 }
 
-func InitComputePath(paths []Stack, needFix []bool) []*ComputePath {
+func InitComputePath(paths []Stack) []*ComputePath {
 	result := make([]*ComputePath, 0, len(paths))
 
 	for i, path := range paths {
 		result = append(result, &ComputePath{
 			Stack: path,
-			Joint: initialJointFor(i, needFix[i]),
+			Joint: initialJointFor(i),
 		})
 	}
 
 	return result
 }
 
-func initialJointFor(i int, needFix bool) *Joint {
+func initialJointFor(i int) *Joint {
 	return &Joint{
 		CurrentIdx:  i,
 		JoinPathIdx: NonExistIndex,
 		JoinGroup:   i,
-		NeedFix:     needFix,
 	}
 }
 

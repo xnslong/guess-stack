@@ -6,14 +6,12 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-const Version = "1.0.1"
-
 var (
-	inputFile = kingpin.Flag("input", "input pprof file. \"-\" means read from the standard input stream").
+	inputFile = kingpin.Flag("input", "input folded stack file. \"-\" means read from the standard input stream").
 			Short('i').
 			Default(utils.DefaultStream).
 			String()
-	outputFile = kingpin.Flag("output", "output pprof file, \"-\" means write to the standard output stream").
+	outputFile = kingpin.Flag("output", "output folded stack file, \"-\" means write to the standard output stream").
 			Short('o').
 			Default(utils.DefaultStream).
 			String()
@@ -35,9 +33,8 @@ var (
 )
 
 func InitFlags() {
-
 	kingpin.Version(core.Version).
 		Author(core.Author).
-		Help = `A tool to fix the missing root call nodes of deep stacks in pprof result, so that the stacks can align with each other`
+		Help = `A tool to fix the missing root call nodes of deep stacks in folded stacks, so that the stacks can align with each other. The output is also folded stacks.`
 	kingpin.Parse()
 }
