@@ -23,15 +23,7 @@ func (s stackElement) EqualsTo(another core.StackNode) bool {
 type foldedStack struct {
 	Stack []core.StackNode
 	Value string
-	need  bool
-}
-
-func (f *foldedStack) NeedFix() bool {
-	return f.need
-}
-
-func (f *foldedStack) SetNeedFix(need bool) {
-	f.need = need
+	*core.StackExtraInfo
 }
 
 func (f *foldedStack) Path() []core.StackNode {
@@ -102,9 +94,9 @@ func ParseStack(line string) (*foldedStack, error) {
 	}
 
 	return &foldedStack{
-		Stack: stackElementList,
-		Value: parts[1],
-		need:  true,
+		Stack:          stackElementList,
+		Value:          parts[1],
+		StackExtraInfo: core.NewStackExtraInfo(),
 	}, nil
 }
 

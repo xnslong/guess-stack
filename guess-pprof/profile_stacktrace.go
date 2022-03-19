@@ -28,15 +28,7 @@ func (l *StackTraceElement) EqualsTo(another core.StackNode) bool {
 
 type StackTrace struct {
 	Elements []core.StackNode
-	needFix  bool
-}
-
-func (s *StackTrace) NeedFix() bool {
-	return s.needFix
-}
-
-func (s *StackTrace) SetNeedFix(need bool) {
-	s.needFix = need
+	*core.StackExtraInfo
 }
 
 func (s *StackTrace) String() string {
@@ -117,6 +109,9 @@ func SampleToStackTrace(sample *profile.Sample) *StackTrace {
 
 	reverse(v)
 
-	st := &StackTrace{Elements: v, needFix: true}
+	st := &StackTrace{
+		Elements:       v,
+		StackExtraInfo: core.NewStackExtraInfo(),
+	}
 	return st
 }
