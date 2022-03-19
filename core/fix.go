@@ -3,16 +3,18 @@ package core
 import (
 	"log"
 	"time"
+
+	"github.com/xnslong/guess-stack/core/guess"
 )
 
 // FixerDecorator decorates a StackFixer, so that more feature will be introduced during the fix
 type FixerDecorator interface {
-	Decorate(underlying StackFixer) StackFixer
+	Decorate(underlying guess.StackFixer) guess.StackFixer
 }
 
-type fixerFunc func(stacks []Stack)
+type fixerFunc func(stacks []guess.Stack)
 
-func (f fixerFunc) Fix(stacks []Stack) {
+func (f fixerFunc) Fix(stacks []guess.Stack) {
 	f(stacks)
 }
 
@@ -23,7 +25,7 @@ type FixOption struct {
 	Verbose   int
 }
 
-func Fix(p Profile, option FixOption) {
+func Fix(p guess.Profile, option FixOption) {
 	finalFixer := buildFixer(option)
 
 	stacks := p.Stacks()
@@ -31,7 +33,7 @@ func Fix(p Profile, option FixOption) {
 	finalFixer.Fix(stacks)
 }
 
-func buildFixer(option FixOption) StackFixer {
+func buildFixer(option FixOption) guess.StackFixer {
 	var middle []FixerDecorator
 	if option.MinDepth > 0 {
 		middle = append(middle, &FixDeeperStacksDecorator{MinDepth: option.MinDepth})
@@ -45,7 +47,7 @@ func buildFixer(option FixOption) StackFixer {
 		middle = append(middle, &VerboseDecorator{Verbose: option.Verbose})
 	}
 
-	var fixer StackFixer = &CommonRootFixer{MinOverlaps: option.Overlap}
+	var fixer guess.StackFixer = &guess.CommonRootFixer{MinOverlaps: option.Overlap}
 	for _, m := range middle {
 		fixer = m.Decorate(fixer)
 	}
@@ -56,8 +58,8 @@ type FixDeeperStacksDecorator struct {
 	MinDepth int
 }
 
-func (o *FixDeeperStacksDecorator) Decorate(underlying StackFixer) StackFixer {
-	return fixerFunc(func(stacks []Stack) {
+func (o *FixDeeperStacksDecorator) Decorate(underlying guess.StackFixer) guess.StackFixer {
+	return fixerFunc(func(stacks []guess.Stack) {
 		for _, stack := range stacks {
 			if stack.NeedFix() {
 				if len(stack.Path()) < o.MinDepth {
@@ -73,8 +75,8 @@ type VerboseDecorator struct {
 	Verbose int
 }
 
-func (v *VerboseDecorator) Decorate(underlying StackFixer) StackFixer {
-	return fixerFunc(func(stacks []Stack) {
+func (v *VerboseDecorator) Decorate(underlying guess.StackFixer) guess.StackFixer {
+	return fixerFunc(func(stacks []guess.Stack) {
 		begin := time.Now()
 		var nodeCount = make([]int, len(stacks))
 		for i, stack := range stacks {
@@ -98,9 +100,9 @@ type WithBaseDecorator struct {
 	BaseCount int
 }
 
-func (f *WithBaseDecorator) Decorate(underlying StackFixer) StackFixer {
-	return fixerFunc(func(stacks []Stack) {
-		base := make([][]StackNode, len(stacks))
+func (f *WithBaseDecorator) Decorate(underlying guess.StackFixer) guess.StackFixer {
+	return fixerFunc(func(stacks []guess.Stack) {
+		base := make([][]guess.StackNode, len(stacks))
 		for i, stack := range stacks {
 			path := stack.Path()
 			base[i] = path[:f.BaseCount]
@@ -111,7 +113,7 @@ func (f *WithBaseDecorator) Decorate(underlying StackFixer) StackFixer {
 
 		for i, stack := range stacks {
 			path := stack.Path()
-			np := make([]StackNode, len(base[i])+len(path))
+			np := make([]guess.StackNode, len(base[i])+len(path))
 			copy(np, base[i])
 			copy(np[f.BaseCount:], path)
 			stack.SetPath(np)

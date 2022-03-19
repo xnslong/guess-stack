@@ -6,12 +6,12 @@ import (
 	"io"
 	"strings"
 
-	"github.com/xnslong/guess-stack/core"
+	"github.com/xnslong/guess-stack/core/guess"
 )
 
 type stackElement string
 
-func (s stackElement) EqualsTo(another core.StackNode) bool {
+func (s stackElement) EqualsTo(another guess.StackNode) bool {
 	se, ok := another.(stackElement)
 	if !ok {
 		return false
@@ -21,24 +21,24 @@ func (s stackElement) EqualsTo(another core.StackNode) bool {
 }
 
 type foldedStack struct {
-	Stack []core.StackNode
+	Stack []guess.StackNode
 	Value string
-	*core.StackExtraInfo
+	*guess.StackExtraInfo
 }
 
-func (f *foldedStack) Path() []core.StackNode {
+func (f *foldedStack) Path() []guess.StackNode {
 	return f.Stack
 }
 
-func (f *foldedStack) SetPath(path []core.StackNode) {
+func (f *foldedStack) SetPath(path []guess.StackNode) {
 	f.Stack = path
 }
 
 type Profile struct {
-	stacks []core.Stack
+	stacks []guess.Stack
 }
 
-func (p *Profile) Stacks() []core.Stack {
+func (p *Profile) Stacks() []guess.Stack {
 	return p.stacks
 }
 
@@ -65,7 +65,7 @@ func (p *Profile) ReadFrom(reader io.Reader) error {
 	scanner := bufio.NewScanner(reader)
 	scanner.Split(bufio.ScanLines)
 
-	result := make([]core.Stack, 0)
+	result := make([]guess.Stack, 0)
 	for scanner.Scan() {
 		stack, err := ParseStack(scanner.Text())
 		if err != nil {
@@ -88,7 +88,7 @@ func ParseStack(line string) (*foldedStack, error) {
 	stack := parts[0]
 
 	stackElementStrList := strings.Split(stack, ";")
-	stackElementList := make([]core.StackNode, len(stackElementStrList))
+	stackElementList := make([]guess.StackNode, len(stackElementStrList))
 	for i, v := range stackElementStrList {
 		stackElementList[i] = stackElement(v)
 	}
@@ -96,7 +96,7 @@ func ParseStack(line string) (*foldedStack, error) {
 	return &foldedStack{
 		Stack:          stackElementList,
 		Value:          parts[1],
-		StackExtraInfo: core.NewStackExtraInfo(),
+		StackExtraInfo: guess.NewStackExtraInfo(),
 	}, nil
 }
 
