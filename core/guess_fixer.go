@@ -1,6 +1,9 @@
 package core
 
-import "sort"
+import (
+	"sort"
+	"sync"
+)
 
 type CommonRootFixer struct {
 	MinOverlaps int
@@ -113,10 +116,66 @@ func UpdateRootForGroup(computePaths []*ComputePath, root []StackNode, oldGroup 
 	return
 }
 
-func ComputeJoints(paths []*ComputePath) {
-	for _, path := range paths {
-		ComputeJoint(path, paths)
+type Pool struct {
+	Concurrency int
+	sync.WaitGroup
+	taskChan chan func()
+}
+
+func NewPool(concurrency int) *Pool {
+	taskChan := make(chan func(), 100)
+
+	p := &Pool{
+		Concurrency: concurrency,
+		WaitGroup:   sync.WaitGroup{},
+		taskChan:    taskChan,
 	}
+	for i := 0; i < concurrency; i++ {
+		go p.work()
+	}
+
+	return p
+}
+
+func (p *Pool) work() {
+	for {
+		t, ok := <-p.taskChan
+		if !ok {
+			return
+		}
+		p.doTask(t)
+	}
+}
+
+func (p *Pool) doTask(t func()) {
+	p.WaitGroup.Done()
+	t()
+}
+
+func (p *Pool) Submit(task func()) {
+	p.WaitGroup.Add(1)
+	p.taskChan <- task
+}
+
+func (p *Pool) StopSubmit() {
+	close(p.taskChan)
+}
+
+func (p *Pool) WaitAll() {
+	p.WaitGroup.Wait()
+}
+
+func ComputeJoints(paths []*ComputePath) {
+	p := NewPool(100)
+
+	for _, path := range paths {
+		p0 := path
+		p.Submit(func() {
+			ComputeJoint(p0, paths)
+		})
+	}
+	p.StopSubmit()
+	p.WaitAll()
 }
 
 func ComputeJoint(path *ComputePath, stacks []*ComputePath) {
