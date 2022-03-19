@@ -22,17 +22,6 @@ after.pprof:
 
 ![after.pprof](../doc/after.png)
 
-## How to guess?
-
-Suppose we have 2 stacks in a graph: A & B. When the root end elements of a stack A overlaps elements in stack B,
-then we guess stack A should have trimmed some root elements the same as those in stack B under the overlapping elements
-(shown in the following 'guess' graph).
-
-![guess.png](../doc/guess.png)
-
-The longer the overlapping part is, the more trustable the guess is. 
-
-If you are interested in the algorithm to realize it, please refer to [algorithm](../fix/README.md).
 
 # Installation
 

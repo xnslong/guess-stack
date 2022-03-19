@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"errors"
 	"io"
-	"strconv"
 	"strings"
 
 	"github.com/xnslong/guess-stack/core"
@@ -23,7 +22,7 @@ func (s stackElement) EqualsTo(another core.StackNode) bool {
 
 type foldedStack struct {
 	Stack []stackElement
-	Count int
+	Value string
 	need  bool
 }
 
@@ -64,14 +63,17 @@ func (p *Profile) Stacks() []core.Stack {
 }
 
 func (p *Profile) WriteTo(writer io.Writer) error {
+	bw := bufio.NewWriter(writer)
+	defer bw.Flush()
+
 	for _, stack := range p.stacks {
 		fs := stack.(*foldedStack)
-		err := FormatStack(fs, writer)
+		err := FormatStack(fs, bw)
 		if err != nil {
 			return err
 		}
 
-		_, err = writer.Write([]byte("\n"))
+		_, err = bw.WriteString("\n")
 		if err != nil {
 			return err
 		}
@@ -98,19 +100,12 @@ func (p *Profile) ReadFrom(reader io.Reader) error {
 }
 
 func ParseStack(line string) (*foldedStack, error) {
-	index := strings.LastIndex(line, " ")
-
-	if index < 0 {
+	parts := strings.SplitN(line, " ", 2)
+	if len(parts) != 2 {
 		return nil, errors.New("invalid folded format")
 	}
 
-	val := line[index+1:]
-	valInt, err := strconv.ParseInt(val, 10, 64)
-	if err != nil {
-		return nil, errors.New("invalid folded format")
-	}
-
-	stack := line[:index]
+	stack := parts[0]
 
 	stackElementStrList := strings.Split(stack, ";")
 	stackElementList := make([]stackElement, len(stackElementStrList))
@@ -120,31 +115,31 @@ func ParseStack(line string) (*foldedStack, error) {
 
 	return &foldedStack{
 		Stack: stackElementList,
-		Count: int(valInt),
+		Value: parts[1],
 		need:  true,
 	}, nil
 }
 
-func FormatStack(stack *foldedStack, writer io.Writer) error {
+func FormatStack(stack *foldedStack, writer io.StringWriter) error {
 	for i, element := range stack.Stack {
 		if i > 0 {
-			_, err := writer.Write([]byte(";"))
+			_, err := writer.WriteString(";")
 			if err != nil {
 				return err
 			}
 		}
-		_, err := writer.Write([]byte(element))
+		_, err := writer.WriteString(string(element))
 		if err != nil {
 			return err
 		}
 	}
 
-	_, err := writer.Write([]byte(" "))
+	_, err := writer.WriteString(" ")
 	if err != nil {
 		return err
 	}
 
-	_, err = writer.Write([]byte(strconv.Itoa(stack.Count)))
+	_, err = writer.WriteString(stack.Value)
 	if err != nil {
 		return err
 	}

@@ -2,15 +2,13 @@
 
 The folded stack format is the intermediate format used to generate flame graph (defined by the [FlameGraph] repo).
 The [FlameGraph] provided a series of tools to extract a variety of profile files to the folded stacks, so that we can
-generate flame graph for them.
+generate flame graphs for all the profile types.
 
 [FlameGraph]: https://github.com/brendangregg/FlameGraph
 
-The guess-fold takes the folded stack file as input and generate another folded stack file as output with the missing
-root stack nodes fixed (by guessing). So the generated folded stack file can be used to generate a flame graph with
-stacks aligned with each other.
+The `guess-fold` takes the folded stack file as input and generate another folded stack file with the missing root stack nodes fixed (by guessing), enabling the stacks to align with each other. So it will be able to fix flame graphs for all the profile types supported by [FlameGraph]. 
 
-![img.png](../doc/guess_fold.png)
+![guess fold](../doc/guess_fold.png)
 
 # Usage
 

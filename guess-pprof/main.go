@@ -32,6 +32,10 @@ func WriteProfile(p *Profile) {
 	if err != nil {
 		log.Panic("write profile error", err)
 	}
+
+	if *verboseCounter > 0 {
+		log.Printf("write profile success to: %s", *outputFile)
+	}
 }
 
 func OpenProfile() *Profile {
@@ -42,6 +46,10 @@ func OpenProfile() *Profile {
 	})
 	if err != nil {
 		log.Panic("open profile error", err)
+	}
+
+	if *verboseCounter > 0 {
+		log.Printf("read profile success from: %s", *inputFile)
 	}
 
 	return p

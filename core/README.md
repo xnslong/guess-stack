@@ -24,14 +24,14 @@ S1 = [f1, f2, f3, f4, f5, f6, f8, f9]
 S2 = [f1, f2, f3, f4, f7]
 ```
 
-Assuming that stack `S1` has nodes `f1, f2` on the left trimmed, it will become
+Assuming that nodes `f1, f2` is trimmed from stack `S1` on the left trimmed, it will become
 
 ```
 S1 = [ f3, f4, f5, f6, f8, f9 ] // (with f1, f2 trimmed) 
 S2 = [ f1, f2, f3, f4, f7 ]
 ```
 
-After recovering, it should be like the following
+After recovering, it should be the following
 
 ```
 S1 = [ f1, f2, f3, f4, f5, f6, f8, f9 ]
@@ -66,29 +66,42 @@ mark `| A |` as the length of list `A` , for example:
 |B+A| = 5
 ```
 
+Suppose `C` is the longest list as prefix for both list `A` & list `B`, we mark
+
+```
+C = A & B
+```
+
+we know there should be a list `D` and `E`, making
+
+```
+A = C + D
+B = C + E
+
+| D & E | = 0
+```
+
 # Analysis
 
-If the roots of the two stacks are originally the same, that is
+If the roots of the two stacks is like following
 
 ```
 S1 = A + A2
 S2 = A + A3
 ```
 
-Where `A2, A3` have no common prefix.
+Where `| A2 & A3 | = 0`.
 
-Assuming `A = A0 + A1`, and `A0` is trimmed from `S1`, then after trimmed:
+Assuming `A = A0 + A1, |A0| > 0, |A1| > 0`, and `A0` is trimmed from `S1`, then after trimmed, the 2 stacks becomes:
 
 ```
 S1 = A1 + A2
 S2 = A0 + A1 + A3
 ```
 
-Then the remaining root `A1` should overlap with the middle list of `S2`.
+Here we know the remaining root `A1` in `S1` should overlap with a middle list of `S2`. Therefore, we can guess that `A0` is trimmed from `S1` through the overlapping position in `S2`.
 
-Therefore, we can guess that `A0` is trimmed from `S1` through the overlapping position in `S2`.
-
-The longer the overlapping `A1` is, the more likely this guess is true.
+The longer the overlapping `A1` is, the more trustable this guess is.
 
 # Solution
 
@@ -99,7 +112,7 @@ S1 = A1 + A2
 S2 = A0 + A1 + A3
 ```
 
-Where `| A0 | > 0` and `A2` and `A3` have no common prefix node,
+Where `| A0 | > 0` and `| A2 & A3 | = 0`,
 
 Then the max overlapping range (`MOR`) is recorded as follows:
 
@@ -164,8 +177,7 @@ Si = A1 + A2
 Sj = A0 + A1 + A3
 ```
 
-Where the`A2` and `A3` lists do not have the common prefix. At this time `MORL(i, j) = | A1 |`. After fixing `Si` , we
-can know:
+Where the`| A2 & A3 | = 0`. At this time `MORL(i, j) = | A1 |`. After fixing `Si` , we can know:
 
 ```
 Si = A0 + A1 + A2
