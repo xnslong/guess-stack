@@ -14,7 +14,16 @@ func (i IntNode) EqualsTo(another StackNode) bool {
 }
 
 type IntPath struct {
-	arr []StackNode
+	arr     []StackNode
+	needFix bool
+}
+
+func (i *IntPath) NeedFix() bool {
+	return i.needFix
+}
+
+func (i *IntPath) SetNeedFix(need bool) {
+	i.needFix = need
 }
 
 func (i *IntPath) Path() []StackNode {
@@ -45,7 +54,21 @@ func makePath(ints [][]int) []Stack {
 		for _, v := range arr {
 			path = append(path, IntNode(v))
 		}
-		result = append(result, &IntPath{path})
+		result = append(result, &IntPath{arr: path, needFix: true})
+	}
+
+	return result
+}
+
+func makePathNeed(ints [][]int, needFix []bool) []Stack {
+	result := make([]Stack, 0, len(ints))
+
+	for i, arr := range ints {
+		var path []StackNode
+		for _, v := range arr {
+			path = append(path, IntNode(v))
+		}
+		result = append(result, &IntPath{arr: path, needFix: needFix[i]})
 	}
 
 	return result
@@ -127,7 +150,7 @@ func TestCommonRootFixer_SelectiveFix(t *testing.T) {
 		{1, 2, 3, 4, 5},
 	}
 
-	c2 := makePath(paths)
+	c2 := makePathNeed(paths, []bool{true, false, true, false})
 	(&CommonRootFixer{2}).Fix(c2)
 
 	expectOut := [][]int{

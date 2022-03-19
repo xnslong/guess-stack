@@ -21,7 +21,7 @@ func (s stackElement) EqualsTo(another core.StackNode) bool {
 }
 
 type foldedStack struct {
-	Stack []stackElement
+	Stack []core.StackNode
 	Value string
 	need  bool
 }
@@ -35,23 +35,11 @@ func (f *foldedStack) SetNeedFix(need bool) {
 }
 
 func (f *foldedStack) Path() []core.StackNode {
-	nodes := make([]core.StackNode, len(f.Stack))
-
-	for i := 0; i < len(f.Stack); i++ {
-		nodes[i] = f.Stack[i]
-	}
-
-	return nodes
+	return f.Stack
 }
 
 func (f *foldedStack) SetPath(path []core.StackNode) {
-	result := make([]stackElement, len(path))
-
-	for i := 0; i < len(path); i++ {
-		result[i] = path[i].(stackElement)
-	}
-
-	f.Stack = result
+	f.Stack = path
 }
 
 type Profile struct {
@@ -108,7 +96,7 @@ func ParseStack(line string) (*foldedStack, error) {
 	stack := parts[0]
 
 	stackElementStrList := strings.Split(stack, ";")
-	stackElementList := make([]stackElement, len(stackElementStrList))
+	stackElementList := make([]core.StackNode, len(stackElementStrList))
 	for i, v := range stackElementStrList {
 		stackElementList[i] = stackElement(v)
 	}
@@ -128,7 +116,9 @@ func FormatStack(stack *foldedStack, writer io.StringWriter) error {
 				return err
 			}
 		}
-		_, err := writer.WriteString(string(element))
+
+		se := element.(stackElement)
+		_, err := writer.WriteString(string(se))
 		if err != nil {
 			return err
 		}

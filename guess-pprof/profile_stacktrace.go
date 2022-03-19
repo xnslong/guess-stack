@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"log"
 
 	"github.com/google/pprof/profile"
 	"github.com/xnslong/guess-stack/core"
@@ -23,23 +22,12 @@ func (l *StackTraceElement) EqualsTo(another core.StackNode) bool {
 		return false
 	}
 
-	if len(l.Line) == 0 {
-		return false
-	}
-
-	if len(anotherLoc.Line) == 0 {
-		return false
-	}
-
 	return l.ID == anotherLoc.ID
 
-	//thisLine := l.Line[0]
-	//anotherLine := anotherLoc.Line[0]
-	//return thisLine.Line == anotherLine.Line // && thisLine.Function.ID == anotherLine.Function.ID
 }
 
 type StackTrace struct {
-	Elements []*StackTraceElement
+	Elements []core.StackNode
 	needFix  bool
 }
 
@@ -56,25 +44,11 @@ func (s *StackTrace) String() string {
 }
 
 func (s *StackTrace) Path() []core.StackNode {
-	pn := make([]core.StackNode, 0, len(s.Elements))
-
-	for _, loc := range s.Elements {
-		pn = append(pn, loc)
-	}
-
-	return pn
+	return s.Elements
 }
 
 func (s *StackTrace) SetPath(path []core.StackNode) {
-	v := s.Elements[:0]
-	for _, node := range path {
-		if loc, ok := node.(*StackTraceElement); ok {
-			v = append(v, loc)
-		} else {
-			log.Panicf("invalid type, expect *Loc, but got %T", node)
-		}
-	}
-	s.Elements = v
+	s.Elements = path
 }
 
 type Profile struct {
@@ -112,7 +86,7 @@ func (p *Profile) ReadFrom(reader io.Reader) error {
 	return nil
 }
 
-func reverse(elements []*StackTraceElement) {
+func reverse(elements []core.StackNode) {
 	for i, j := 0, len(elements)-1; i < j; {
 		elements[i], elements[j] = elements[j], elements[i]
 		i++
@@ -121,7 +95,7 @@ func reverse(elements []*StackTraceElement) {
 }
 
 func StackTraceToSample(st *StackTrace, target *profile.Sample) {
-	elem := make([]*StackTraceElement, len(st.Elements))
+	elem := make([]core.StackNode, len(st.Elements))
 	copy(elem, st.Elements)
 
 	reverse(elem)
@@ -129,14 +103,14 @@ func StackTraceToSample(st *StackTrace, target *profile.Sample) {
 	var loc []*profile.Location
 
 	for _, element := range elem {
-		loc = append(loc, element.Location)
+		loc = append(loc, element.(*StackTraceElement).Location)
 	}
 
 	target.Location = loc
 }
 
 func SampleToStackTrace(sample *profile.Sample) *StackTrace {
-	var v []*StackTraceElement
+	var v []core.StackNode
 	for _, location := range sample.Location {
 		v = append(v, &StackTraceElement{location})
 	}

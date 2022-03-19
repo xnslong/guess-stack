@@ -141,18 +141,16 @@ func ComputeJoint(path *ComputePath, stacks []*ComputePath) {
 }
 
 func maxOverlappingMiddleRange(p1, p2 []StackNode) (begin, length int) {
-	if len(p2) == 0 {
+	if len(p2) <= 1 {
 		return
 	}
 
-	p2 = p2[1:]
-	for len(p2) > 0 {
-		l := commonPrefixLen(p1, p2)
+	for i, pl := 1, len(p2); i < pl; i++ {
+		l := commonPrefixLen(p1, p2, i)
 		if l > length {
 			length = l
-			begin = len(p2)
+			begin = pl - i
 		}
-		p2 = p2[1:]
 	}
 	return
 }
@@ -192,15 +190,16 @@ func initialJointFor(i int) *Joint {
 	}
 }
 
-func commonPrefixLen(a1, a2 []StackNode) int {
+func commonPrefixLen(a1, a2 []StackNode, s int) int {
 	m := len(a1)
-	if m > len(a2) {
-		m = len(a2)
+	l2 := len(a2) - s
+	if m > l2 {
+		m = l2
 	}
 
-	for i := 0; i < m; i++ {
-		if !a1[i].EqualsTo(a2[i]) {
-			return i
+	for j := 0; j < m; j++ {
+		if !a1[j].EqualsTo(a2[j+s]) {
+			return j
 		}
 	}
 

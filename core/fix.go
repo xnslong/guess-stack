@@ -2,6 +2,7 @@ package core
 
 import (
 	"log"
+	"time"
 )
 
 // FixerDecorator decorates a StackFixer, so that more feature will be introduced during the fix
@@ -23,18 +24,16 @@ type FixOption struct {
 }
 
 func Fix(p Profile, option FixOption) {
-	fixer := &CommonRootFixer{MinOverlaps: option.Overlap}
-	FixProfile(p, fixer, option)
-}
-
-func FixProfile(p Profile, sf StackFixer, option FixOption) {
-	finalFixer := buildFixer(option, sf)
+	finalFixer := buildFixer(option)
 
 	stacks := p.Stacks()
+
 	finalFixer.Fix(stacks)
 }
 
-func buildFixer(option FixOption, sf StackFixer) StackFixer {
+func buildFixer(option FixOption) StackFixer {
+	var fixer StackFixer = &CommonRootFixer{MinOverlaps: option.Overlap}
+
 	var middle []FixerDecorator
 	if option.MinDepth > 0 {
 		middle = append(middle, &FixDeeperStacksDecorator{MinDepth: option.MinDepth})
@@ -48,12 +47,10 @@ func buildFixer(option FixOption, sf StackFixer) StackFixer {
 		middle = append(middle, &VerboseDecorator{Verbose: option.Verbose})
 	}
 
-	var finalFixer = sf
-
 	for _, m := range middle {
-		finalFixer = m.Decorate(finalFixer)
+		fixer = m.Decorate(fixer)
 	}
-	return finalFixer
+	return fixer
 }
 
 type FixDeeperStacksDecorator struct {
@@ -79,6 +76,7 @@ type VerboseDecorator struct {
 
 func (v *VerboseDecorator) Decorate(underlying StackFixer) StackFixer {
 	return fixerFunc(func(stacks []Stack) {
+		begin := time.Now()
 		var nodeCount = make([]int, len(stacks))
 		for i, stack := range stacks {
 			nodeCount[i] = len(stack.Path())
@@ -93,7 +91,7 @@ func (v *VerboseDecorator) Decorate(underlying StackFixer) StackFixer {
 			}
 		}
 
-		log.Printf("fixed stacks: %d/%d", count, len(stacks))
+		log.Printf("fixed stacks: %d/%d (%s elapsed)", count, len(stacks), time.Since(begin).Round(time.Millisecond))
 	})
 }
 
