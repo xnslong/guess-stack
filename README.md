@@ -1,7 +1,7 @@
 # guess-stack
 
 When taking samples of call stacks from a process in flight, some root stack nodes may be lost if the stack is too deep.
-Then the stacks cannot align with each other anymore, it will very hard to analyze.
+Then the stacks cannot align with each other anymore, it will be hard to analyze.
 
 For example, following is a FlameGraph whose stacks have their root call nodes lost, it becomes hard to understand.
 
@@ -26,7 +26,7 @@ If you are interested in the algorithm to realize it, please refer to [algorithm
 
 # Module introduction
 
-Since there are a lot of profile file types, we will provide a variety of tools to fix each profile file type.
+Since there are a variety of profile file types, we will provide several tools to fix each profile file type.
 
 * [guess-pprof](guess-pprof/README.md): a tool to fix the golang pprof profile. (taken
   by [pprof](https://github.com/google/pprof))
