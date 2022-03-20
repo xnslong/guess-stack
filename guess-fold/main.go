@@ -12,6 +12,14 @@ import (
 func main() {
 	InitFlags()
 
+	if *pprofOutfile != "" {
+		utils.DoWithPProf(*pprofOutfile, FixProfile)
+	} else {
+		FixProfile()
+	}
+}
+
+func FixProfile() {
 	p := &Profile{}
 	InputProfile(p)
 

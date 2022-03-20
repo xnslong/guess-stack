@@ -29,6 +29,10 @@ var (
 			Short('d').
 			Default("0").
 			Int()
+	pprofOutfile = kingpin.Flag("self-pprof", "pprof for the program itself for improvement reasons").
+			Short('p').
+			Default("").
+			String()
 	verboseCounter = kingpin.Flag("verbose", "show verbose info on fixing the pprof").
 			Short('v').
 			Counter()
