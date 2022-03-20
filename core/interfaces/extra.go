@@ -1,13 +1,8 @@
-package guess
+package interfaces
 
-import "io"
-
-type StackFixer interface {
-	Fix(paths []Stack)
-}
-
-type StackNode interface {
-	EqualsTo(another StackNode) bool
+type Extra interface {
+	Needed
+	Grouped
 }
 
 type Needed interface {
@@ -18,19 +13,6 @@ type Needed interface {
 type Grouped interface {
 	Group() int     // stack belonging to different group won't join each other.
 	SetGroup(g int) // set stack group. stack belonging to different group won't join each other.
-}
-
-type Stack interface {
-	Path() []StackNode
-	SetPath(path []StackNode)
-	Needed
-	Grouped
-}
-
-type Profile interface {
-	Stacks() []Stack
-	WriteTo(writer io.Writer) error
-	ReadFrom(reader io.Reader) error
 }
 
 // NewStackExtraInfo creates a StackExtraInfo with all field to the correct default value.

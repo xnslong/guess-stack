@@ -38,7 +38,7 @@ func InputProfile(p *Profile) {
 		return p.ReadFrom(reader)
 	})
 	if err != nil {
-		log.Printf("read folded stack error: %w", err)
+		log.Printf("read folded stack error: %v", err)
 		os.Exit(1)
 	}
 
@@ -52,7 +52,7 @@ func OutputProfile(p *Profile) {
 		return p.WriteTo(writer)
 	})
 	if err != nil {
-		log.Printf("write folded stack error: %w", err)
+		log.Printf("write folded stack error: %v", err)
 		os.Exit(1)
 	}
 	if *verboseCounter > 0 {

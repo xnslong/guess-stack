@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/xnslong/guess-stack/core/guess"
+	"github.com/xnslong/guess-stack/core/mock"
 )
 
 func TestFixDeeperStacksDecorator_Decorate(t *testing.T) {
@@ -15,10 +16,10 @@ func TestFixDeeperStacksDecorator_Decorate(t *testing.T) {
 		{8, 9, 10, 11, 12, 13},
 	}
 
-	c1 := guess.makePath(paths)
+	c1 := mock.MakePath(paths)
 	fixer := &guess.CommonRootFixer{1}
 
-	d7Fixer := (&FixDeeperStacksDecorator{MinDepth: 7}).Decorate(fixer)
+	d7Fixer := (&FixDeeperStacksDecorator{&FixOption{MinDepth: 7}}).Decorate(fixer)
 	d7Fixer.Fix(c1)
 
 	assert.Equal(t, [][]int{
@@ -26,13 +27,13 @@ func TestFixDeeperStacksDecorator_Decorate(t *testing.T) {
 		{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
 		{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
 		{8, 9, 10, 11, 12, 13}, // not fixed, depth not big enough
-	}, guess.pathToArray(c1))
-	guess.Print(c1)
+	}, mock.PathToArray(c1))
+	mock.Print(c1)
 
-	d2Fixer := (&FixDeeperStacksDecorator{MinDepth: 1}).Decorate(fixer)
+	d2Fixer := (&FixDeeperStacksDecorator{&FixOption{MinDepth: 1}}).Decorate(fixer)
 	d2Fixer.Fix(c1)
 
-	c2 := guess.makePath(paths)
+	c2 := mock.MakePath(paths)
 	d2Fixer.Fix(c2)
 	// all fixed, depth are all big enough
 	assert.Equal(t, [][]int{
@@ -40,8 +41,8 @@ func TestFixDeeperStacksDecorator_Decorate(t *testing.T) {
 		{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
 		{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
 		{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
-	}, guess.pathToArray(c2))
-	guess.Print(c2)
+	}, mock.PathToArray(c2))
+	mock.Print(c2)
 }
 
 func TestWithBaseDecorator_Decorate(t *testing.T) {
@@ -52,10 +53,10 @@ func TestWithBaseDecorator_Decorate(t *testing.T) {
 		{0, 8, 9, 10, 11, 12, 13},
 	}
 
-	c1 := guess.makePath(paths)
+	c1 := mock.MakePath(paths)
 	fixer := &guess.CommonRootFixer{1}
 
-	(&WithBaseDecorator{BaseCount: 1}).Decorate(fixer).Fix(c1)
+	(&WithBaseDecorator{&FixOption{BaseCount: 1}}).Decorate(fixer).Fix(c1)
 
 	// with 1 base, compute OK
 	assert.Equal(t, [][]int{
@@ -63,11 +64,11 @@ func TestWithBaseDecorator_Decorate(t *testing.T) {
 		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
 		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
 		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
-	}, guess.pathToArray(c1))
-	guess.Print(c1)
+	}, mock.PathToArray(c1))
+	mock.Print(c1)
 
-	c2 := guess.makePath(paths)
-	(&WithBaseDecorator{BaseCount: 0}).Decorate(fixer).Fix(c2)
+	c2 := mock.MakePath(paths)
+	(&WithBaseDecorator{&FixOption{BaseCount: 0}}).Decorate(fixer).Fix(c2)
 
 	// with base, can not fix
 	assert.Equal(t, [][]int{
@@ -75,7 +76,7 @@ func TestWithBaseDecorator_Decorate(t *testing.T) {
 		{0, 6, 7, 8, 9, 10, 11, 12},
 		{0, 4, 5, 6, 7, 8, 9, 10},
 		{0, 8, 9, 10, 11, 12, 13},
-	}, guess.pathToArray(c2))
-	guess.Print(c2)
+	}, mock.PathToArray(c2))
+	mock.Print(c2)
 
 }

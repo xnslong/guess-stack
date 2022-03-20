@@ -4,6 +4,7 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/xnslong/guess-stack/core/interfaces"
 	"github.com/xnslong/guess-stack/utils"
 )
 
@@ -36,19 +37,19 @@ func (js jointSlice) Swap(i, j int) {
 }
 
 type computePath struct {
-	Stack
+	interfaces.Stack
 	*joint
 }
 
-func (c *computePath) AddRoot(root []StackNode) {
+func (c *computePath) AddRoot(root []interfaces.StackNode) {
 	path := c.Stack.Path()
-	newPath := make([]StackNode, len(root)+len(path))
+	newPath := make([]interfaces.StackNode, len(root)+len(path))
 	copy(newPath, root)
 	copy(newPath[len(root):], path)
 	c.Stack.SetPath(newPath)
 }
 
-func (c *CommonRootFixer) Fix(paths []Stack) {
+func (c *CommonRootFixer) Fix(paths []interfaces.Stack) {
 	computeStacks := initComputePath(paths)
 
 	computeJoints(computeStacks)
@@ -108,7 +109,7 @@ func resetJoint(joint *joint) {
 	joint.Overlaps = 0
 }
 
-func updateRootForGroup(computePaths []*computePath, root []StackNode, oldGroup int, newGroup int) {
+func updateRootForGroup(computePaths []*computePath, root []interfaces.StackNode, oldGroup int, newGroup int) {
 	for _, stack := range computePaths {
 		if stack.joint.JoinGroup == oldGroup {
 			stack.AddRoot(root)
@@ -160,7 +161,7 @@ func computeJoint(path *computePath, stacks []*computePath) {
 	return
 }
 
-func maxOverlappingMiddleRange(p1, p2 []StackNode) (begin, length int) {
+func maxOverlappingMiddleRange(p1, p2 []interfaces.StackNode) (begin, length int) {
 	if len(p2) <= 1 {
 		return
 	}
@@ -175,7 +176,7 @@ func maxOverlappingMiddleRange(p1, p2 []StackNode) (begin, length int) {
 	return
 }
 
-func getRoot(node *computePath, leafCount int) []StackNode {
+func getRoot(node *computePath, leafCount int) []interfaces.StackNode {
 	stack := node.Stack.Path()
 	i := len(stack) - leafCount
 	return stack[:i]
@@ -189,7 +190,7 @@ func extractJoints(paths []*computePath) []*joint {
 	return joints
 }
 
-func initComputePath(paths []Stack) []*computePath {
+func initComputePath(paths []interfaces.Stack) []*computePath {
 	result := make([]*computePath, 0, len(paths))
 
 	for i, path := range paths {
@@ -210,7 +211,7 @@ func initialJointFor(i int) *joint {
 	}
 }
 
-func commonPrefixLen(a1, a2 []StackNode, s int) int {
+func commonPrefixLen(a1, a2 []interfaces.StackNode, s int) int {
 	m := len(a1)
 	l2 := len(a2) - s
 	if m > l2 {

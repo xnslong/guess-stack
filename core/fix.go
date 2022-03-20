@@ -5,17 +5,18 @@ import (
 	"time"
 
 	"github.com/xnslong/guess-stack/core/guess"
+	"github.com/xnslong/guess-stack/core/interfaces"
 	"github.com/xnslong/guess-stack/utils"
 )
 
 // FixerDecorator decorates a StackFixer, so that more feature will be introduced during the fix
 type FixerDecorator interface {
-	Decorate(underlying guess.StackFixer) guess.StackFixer
+	Decorate(underlying interfaces.StackFixer) interfaces.StackFixer
 }
 
-type fixerFunc func(stacks []guess.Stack)
+type fixerFunc func(stacks []interfaces.Stack)
 
-func (f fixerFunc) Fix(stacks []guess.Stack) {
+func (f fixerFunc) Fix(stacks []interfaces.Stack) {
 	f(stacks)
 }
 
@@ -26,7 +27,7 @@ type FixOption struct {
 	Verbose   int
 }
 
-func Fix(p guess.Profile, option FixOption) {
+func Fix(p interfaces.Profile, option FixOption) {
 	finalFixer := buildFixer(option)
 
 	stacks := p.Stacks()
@@ -34,7 +35,7 @@ func Fix(p guess.Profile, option FixOption) {
 	finalFixer.Fix(stacks)
 }
 
-func buildFixer(option FixOption) guess.StackFixer {
+func buildFixer(option FixOption) interfaces.StackFixer {
 	var middle []FixerDecorator
 	if option.MinDepth > 0 {
 		middle = append(middle, &FixDeeperStacksDecorator{&option})
@@ -48,7 +49,7 @@ func buildFixer(option FixOption) guess.StackFixer {
 		middle = append(middle, &ShowFixInfoDecorator{&option})
 	}
 
-	var fixer guess.StackFixer = &guess.CommonRootFixer{MinOverlaps: option.Overlap}
+	var fixer interfaces.StackFixer = &guess.CommonRootFixer{MinOverlaps: option.Overlap}
 	for _, m := range middle {
 		fixer = m.Decorate(fixer)
 	}
@@ -59,8 +60,8 @@ type FixDeeperStacksDecorator struct {
 	*FixOption
 }
 
-func (o *FixDeeperStacksDecorator) Decorate(underlying guess.StackFixer) guess.StackFixer {
-	return fixerFunc(func(stacks []guess.Stack) {
+func (o *FixDeeperStacksDecorator) Decorate(underlying interfaces.StackFixer) interfaces.StackFixer {
+	return fixerFunc(func(stacks []interfaces.Stack) {
 		notNeed := 0
 		for _, stack := range stacks {
 			if stack.NeedFix() {
@@ -81,8 +82,8 @@ type ShowFixInfoDecorator struct {
 	*FixOption
 }
 
-func (v *ShowFixInfoDecorator) Decorate(underlying guess.StackFixer) guess.StackFixer {
-	return fixerFunc(func(stacks []guess.Stack) {
+func (v *ShowFixInfoDecorator) Decorate(underlying interfaces.StackFixer) interfaces.StackFixer {
+	return fixerFunc(func(stacks []interfaces.Stack) {
 		begin := time.Now()
 		var nodeCount = make([]int, len(stacks))
 		for i, stack := range stacks {
@@ -106,7 +107,7 @@ type WithBaseDecorator struct {
 	*FixOption
 }
 
-type substack []guess.StackNode
+type substack []interfaces.StackNode
 
 func (s substack) EqualTo(another substack) bool {
 	if len(s) != len(another) {
@@ -129,7 +130,7 @@ type groups struct {
 
 func (g *groups) intern(s substack) (group int) {
 	defer func() {
-		if len(g.Count) < len(s) {
+		if len(g.Count) < len(s)+1 {
 			newArr := make([]int, len(s)+1)
 			copy(newArr, g.Count)
 			g.Count = newArr
@@ -147,10 +148,10 @@ func (g *groups) intern(s substack) (group int) {
 	return len(g.G) - 1
 }
 
-func (f *WithBaseDecorator) Decorate(underlying guess.StackFixer) guess.StackFixer {
-	return fixerFunc(func(stacks []guess.Stack) {
+func (f *WithBaseDecorator) Decorate(underlying interfaces.StackFixer) interfaces.StackFixer {
+	return fixerFunc(func(stacks []interfaces.Stack) {
 		g := &groups{}
-		base := make([][]guess.StackNode, len(stacks))
+		base := make([][]interfaces.StackNode, len(stacks))
 		for i, stack := range stacks {
 			path := stack.Path()
 			b := utils.MinInt(f.BaseCount, len(path))
@@ -168,7 +169,7 @@ func (f *WithBaseDecorator) Decorate(underlying guess.StackFixer) guess.StackFix
 
 		for i, stack := range stacks {
 			path := stack.Path()
-			np := make([]guess.StackNode, len(base[i])+len(path))
+			np := make([]interfaces.StackNode, len(base[i])+len(path))
 			copy(np, base[i])
 			copy(np[len(base[i]):], path)
 			stack.SetPath(np)

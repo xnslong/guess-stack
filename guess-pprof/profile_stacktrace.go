@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"github.com/google/pprof/profile"
-	"github.com/xnslong/guess-stack/core/guess"
+	"github.com/xnslong/guess-stack/core/interfaces"
 )
 
 type StackTraceElement struct {
@@ -56,7 +56,7 @@ func (l *StackTraceElement) String() string {
 	return fmt.Sprintf("%d", l.ID)
 }
 
-func (l *StackTraceElement) EqualsTo(another guess.StackNode) bool {
+func (l *StackTraceElement) EqualsTo(another interfaces.StackNode) bool {
 	anotherLoc, ok := another.(*StackTraceElement)
 	if !ok {
 		return false
@@ -70,28 +70,28 @@ func (l *StackTraceElement) EqualsTo(another guess.StackNode) bool {
 }
 
 type StackTrace struct {
-	Elements []guess.StackNode
-	*guess.StackExtraInfo
+	Elements []interfaces.StackNode
+	*interfaces.StackExtraInfo
 }
 
 func (s *StackTrace) String() string {
 	return fmt.Sprintf("%s", s.Elements)
 }
 
-func (s *StackTrace) Path() []guess.StackNode {
+func (s *StackTrace) Path() []interfaces.StackNode {
 	return s.Elements
 }
 
-func (s *StackTrace) SetPath(path []guess.StackNode) {
+func (s *StackTrace) SetPath(path []interfaces.StackNode) {
 	s.Elements = path
 }
 
 type Profile struct {
 	PProf  *profile.Profile
-	stacks []guess.Stack
+	stacks []interfaces.Stack
 }
 
-func (p *Profile) Stacks() []guess.Stack {
+func (p *Profile) Stacks() []interfaces.Stack {
 	return p.stacks
 }
 
@@ -110,7 +110,7 @@ func (p *Profile) ReadFrom(reader io.Reader) error {
 		return fmt.Errorf("open profile error: %w", err)
 	}
 
-	stacks := make([]guess.Stack, 0, len(pprof.Sample))
+	stacks := make([]interfaces.Stack, 0, len(pprof.Sample))
 	for _, sample := range pprof.Sample {
 		stacks = append(stacks, SampleToStackTrace(sample))
 	}
@@ -121,7 +121,7 @@ func (p *Profile) ReadFrom(reader io.Reader) error {
 	return nil
 }
 
-func reverse(elements []guess.StackNode) {
+func reverse(elements []interfaces.StackNode) {
 	for i, j := 0, len(elements)-1; i < j; {
 		elements[i], elements[j] = elements[j], elements[i]
 		i++
@@ -130,7 +130,7 @@ func reverse(elements []guess.StackNode) {
 }
 
 func StackTraceToSample(st *StackTrace, target *profile.Sample) {
-	elem := make([]guess.StackNode, len(st.Elements))
+	elem := make([]interfaces.StackNode, len(st.Elements))
 	copy(elem, st.Elements)
 
 	reverse(elem)
@@ -145,7 +145,7 @@ func StackTraceToSample(st *StackTrace, target *profile.Sample) {
 }
 
 func SampleToStackTrace(sample *profile.Sample) *StackTrace {
-	var v []guess.StackNode
+	var v []interfaces.StackNode
 	for _, location := range sample.Location {
 		v = append(v, NewStackTraceElement(location))
 	}
@@ -154,7 +154,7 @@ func SampleToStackTrace(sample *profile.Sample) *StackTrace {
 
 	st := &StackTrace{
 		Elements:       v,
-		StackExtraInfo: guess.NewStackExtraInfo(),
+		StackExtraInfo: interfaces.NewStackExtraInfo(),
 	}
 	return st
 }
