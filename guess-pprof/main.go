@@ -1,8 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
+	"os"
+	"path"
+	"runtime/pprof"
+	"time"
 
 	"github.com/xnslong/guess-stack/core"
 	"github.com/xnslong/guess-stack/utils"
@@ -13,6 +18,12 @@ func init() {
 }
 
 func main() {
+	name := fmt.Sprintf("%s-%s.pprof", path.Base(os.Args[0]), time.Now().Format("20060102-150405"))
+	file, _ := os.OpenFile(name, os.O_CREATE|os.O_WRONLY, 0644)
+	defer file.Close()
+	pprof.StartCPUProfile(file)
+	defer pprof.StopCPUProfile()
+
 	p := OpenProfile()
 
 	core.Fix(p, core.FixOption{

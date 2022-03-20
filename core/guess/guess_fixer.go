@@ -147,6 +147,9 @@ func computeJoint(path *computePath, stacks []*computePath) {
 		if stack.JoinGroup == path.CurrentIdx {
 			continue
 		}
+		if stack.Group() != path.Group() {
+			continue
+		}
 		begin, length := maxOverlappingMiddleRange(currentStack, stack.Path())
 		if length > path.joint.Overlaps {
 			path.JoinPathIdx = stack.CurrentIdx

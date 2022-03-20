@@ -10,6 +10,46 @@ import (
 
 type StackTraceElement struct {
 	*profile.Location
+	name *nameStruct
+}
+
+type nameStruct struct {
+	Value string
+}
+
+var names = make(map[string]*nameStruct)
+
+func nameOf(name string) *nameStruct {
+	val, ok := names[name]
+	if ok {
+		return val
+	}
+
+	val = &nameStruct{name}
+	names[name] = val
+	return val
+}
+
+func NewStackTraceElement(location *profile.Location) *StackTraceElement {
+	var (
+		name string
+	)
+
+	if len(location.Line) > 0 {
+		f := location.Line[0].Function
+		if f != nil {
+			name = f.Name
+		}
+	}
+
+	var n *nameStruct
+	if len(name) != 0 {
+		n = nameOf(name)
+	}
+	return &StackTraceElement{
+		Location: location,
+		name:     n,
+	}
 }
 
 func (l *StackTraceElement) String() string {
@@ -22,8 +62,11 @@ func (l *StackTraceElement) EqualsTo(another guess.StackNode) bool {
 		return false
 	}
 
-	return l.ID == anotherLoc.ID
+	if l.name != nil || anotherLoc.name != nil {
+		return l.name == anotherLoc.name
+	}
 
+	return l.ID == anotherLoc.ID
 }
 
 type StackTrace struct {
@@ -104,7 +147,7 @@ func StackTraceToSample(st *StackTrace, target *profile.Sample) {
 func SampleToStackTrace(sample *profile.Sample) *StackTrace {
 	var v []guess.StackNode
 	for _, location := range sample.Location {
-		v = append(v, &StackTraceElement{location})
+		v = append(v, NewStackTraceElement(location))
 	}
 
 	reverse(v)
