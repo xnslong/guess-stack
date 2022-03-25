@@ -8,6 +8,10 @@ import (
 
 type IntNode int
 
+func (i IntNode) HashCode() int {
+	return int(i)
+}
+
 func (i IntNode) EqualsTo(another interfaces.StackNode) bool {
 	return i == another
 }

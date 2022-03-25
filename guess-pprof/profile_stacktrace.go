@@ -5,13 +5,9 @@ import (
 	"io"
 
 	"github.com/google/pprof/profile"
+
 	"github.com/xnslong/guess-stack/core/interfaces"
 )
-
-type StackTraceElement struct {
-	*profile.Location
-	name *nameStruct
-}
 
 type nameStruct struct {
 	Value string
@@ -28,6 +24,24 @@ func nameOf(name string) *nameStruct {
 	val = &nameStruct{name}
 	names[name] = val
 	return val
+}
+
+type StackTraceElement struct {
+	*profile.Location
+	name *nameStruct
+}
+
+func (l *StackTraceElement) HashCode() int {
+	if l.name == nil {
+		return 0
+	}
+
+	r := 0
+	for _, v := range l.name.Value {
+		r = r*31 + int(v)
+	}
+
+	return r
 }
 
 func NewStackTraceElement(location *profile.Location) *StackTraceElement {
