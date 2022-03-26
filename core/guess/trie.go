@@ -1,6 +1,8 @@
 package guess
 
-import "github.com/xnslong/guess-stack/core/interfaces"
+import (
+	"github.com/xnslong/guess-stack/core/interfaces"
+)
 
 type stackNode struct {
 	interfaces.StackNode
@@ -51,21 +53,20 @@ func transform(stacks []interfaces.Stack) []*stack {
 	return result
 }
 
-type node struct {
-	Parent    *node
+type trieNode struct {
+	Parent    *trieNode
 	StackNode *stackNode
-	Children  map[*stackNode]*node
+	Children  map[*stackNode]*trieNode
 
-	MyIndex     int
+	MyIndex     []int // leaf node will record the stack index, other nodes will not
 	JoinPathIdx int
 	JoinNodeIdx int
 	Overlaps    int
 }
 
-func (n *node) visitLeaf(f func(leaf *node)) {
-	if len(n.Children) == 0 {
+func (n *trieNode) visitLeaf(f func(leaf *trieNode)) {
+	if len(n.MyIndex) > 0 {
 		f(n)
-		return
 	}
 
 	for _, child := range n.Children {
@@ -73,43 +74,46 @@ func (n *node) visitLeaf(f func(leaf *node)) {
 	}
 }
 
-func buildTrie(stacks []*stack) *node {
-	root := &node{
-		Parent:    nil,
-		StackNode: nil,
-		Children:  make(map[*stackNode]*node),
+func (n *trieNode) addStack(path []*stackNode, id int) {
+	if len(path) == 0 {
+		n.MyIndex = append(n.MyIndex, id)
+		return
 	}
+
+	node := path[0]
+	next, ok := n.Children[node]
+	if !ok {
+		next = &trieNode{
+			Parent:      n,
+			StackNode:   node,
+			Children:    make(map[*stackNode]*trieNode),
+			JoinPathIdx: nonExistIndex,
+			JoinNodeIdx: 0,
+		}
+		n.Children[node] = next
+	}
+
+	next.addStack(path[1:], id)
+}
+
+func buildTrie(stacks []*stack) *trieNode {
+	root := &trieNode{
+		Parent:      nil,
+		StackNode:   nil,
+		Children:    make(map[*stackNode]*trieNode),
+		JoinPathIdx: nonExistIndex,
+	}
+
+	c := 0
 
 	for _, s := range stacks {
 		if s.needFix {
-			addStack(s, root)
+			root.addStack(s.path, s.index)
+			c++
 		}
 	}
 
 	return root
-}
-
-func addStack(stack *stack, root *node) {
-	current := root
-
-	path := stack.path
-
-	for len(path) > 0 {
-		me := path[0]
-		path = path[1:]
-		next, ok := current.Children[me]
-		if !ok {
-			next = &node{
-				Parent:    current,
-				StackNode: me,
-				Children:  make(map[*stackNode]*node),
-			}
-			current.Children[me] = next
-		}
-		current = next
-	}
-
-	current.MyIndex = stack.index
 }
 
 func computeStackJoints(stacks []*stack, joints []*joint) {
@@ -122,22 +126,24 @@ func computeStackJoints(stacks []*stack, joints []*joint) {
 	collectJoints(trie, joints)
 }
 
-func collectJoints(trie *node, joints []*joint) {
-	trie.visitLeaf(func(leaf *node) {
-		idx := leaf.MyIndex
+func collectJoints(trie *trieNode, joints []*joint) {
+	trie.visitLeaf(func(leaf *trieNode) {
+		indexes := leaf.MyIndex
 		n := leaf
 		for n != nil && n.Overlaps == 0 {
 			n = n.Parent
 		}
 		if n != nil {
-			joints[idx].Overlaps = n.Overlaps
-			joints[idx].JoinNodeIdx = n.JoinNodeIdx
-			joints[idx].JoinPathIdx = n.JoinPathIdx
+			for _, idx := range indexes {
+				joints[idx].Overlaps = n.Overlaps
+				joints[idx].JoinNodeIdx = n.JoinNodeIdx
+				joints[idx].JoinPathIdx = n.JoinPathIdx
+			}
 		}
 	})
 }
 
-func compare(trie *node, iStack int, s *stack) {
+func compare(trie *trieNode, iStack int, s *stack) {
 	path := s.path
 
 	for len(path) > 0 {
@@ -146,7 +152,7 @@ func compare(trie *node, iStack int, s *stack) {
 	}
 }
 
-func updateOverlaps(trie *node, iStack int, path []*stackNode) {
+func updateOverlaps(trie *trieNode, iStack int, path []*stackNode) {
 	if len(path) == 0 {
 		return
 	}

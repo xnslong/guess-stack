@@ -37,20 +37,22 @@ func Fix(p interfaces.Profile, option FixOption) {
 
 func buildFixer(option FixOption) interfaces.StackFixer {
 	var middle []FixerDecorator
-	if option.MinDepth > 0 {
-		middle = append(middle, &FixDeeperStacksDecorator{&option})
+
+	if option.Verbose > 0 {
+		middle = append(middle, &ShowFixInfoDecorator{&option})
 	}
 
 	if option.BaseCount > 0 {
 		middle = append(middle, &WithBaseDecorator{&option})
 	}
 
-	if option.Verbose > 0 {
-		middle = append(middle, &ShowFixInfoDecorator{&option})
+	if option.MinDepth > 0 {
+		middle = append(middle, &FixDeeperStacksDecorator{&option})
 	}
 
 	var fixer interfaces.StackFixer = &guess.CommonRootFixer{MinOverlaps: option.Overlap}
-	for _, m := range middle {
+	for i := len(middle) - 1; i >= 0; i-- {
+		m := middle[i]
 		fixer = m.Decorate(fixer)
 	}
 	return fixer
@@ -124,68 +126,61 @@ func (s substack) EqualTo(another substack) bool {
 }
 
 type groups struct {
-	G     []substack
-	Count []int
+	Base   []substack
+	Groups [][]interfaces.Stack
 }
 
-func (g *groups) intern(s substack) (group int) {
-	defer func() {
-		if len(g.Count) < len(s)+1 {
-			newArr := make([]int, len(s)+1)
-			copy(newArr, g.Count)
-			g.Count = newArr
-		}
-		g.Count[len(s)]++
-	}()
+func (g *groups) intern(base substack, stack interfaces.Stack) {
 
-	for i, s2 := range g.G {
+	i := g.findGroupId(base)
+	if i < 0 {
+		g.Base = append(g.Base, base)
+		g.Groups = append(g.Groups, nil)
+		i = len(g.Base) - 1
+	}
+
+	g.Groups[i] = append(g.Groups[i], stack)
+	return
+}
+
+func (g *groups) findGroupId(s substack) int {
+	for i, s2 := range g.Base {
 		if s2.EqualTo(s) {
 			return i
 		}
 	}
-
-	g.G = append(g.G, s)
-	return len(g.G) - 1
+	return -1
 }
 
 func (f *WithBaseDecorator) Decorate(underlying interfaces.StackFixer) interfaces.StackFixer {
 	return fixerFunc(func(stacks []interfaces.Stack) {
 		g := &groups{}
-		base := make([][]interfaces.StackNode, len(stacks))
-		for i, stack := range stacks {
+		for _, stack := range stacks {
 			path := stack.Path()
 			b := utils.MinInt(f.BaseCount, len(path))
-
-			base[i] = path[:b]
 			stack.SetPath(path[b:])
-
-			gId := g.intern(base[i])
-			stack.SetGroup(gId)
+			g.intern(path[:b], stack)
 		}
 
 		f.logBaseInfo(g)
 
-		underlying.Fix(stacks)
+		for i, group := range g.Groups {
+			underlying.Fix(group)
+			base := g.Base[i]
 
-		for i, stack := range stacks {
-			path := stack.Path()
-			np := make([]interfaces.StackNode, len(base[i])+len(path))
-			copy(np, base[i])
-			copy(np[len(base[i]):], path)
-			stack.SetPath(np)
+			for _, stack := range group {
+				path := stack.Path()
+				np := make([]interfaces.StackNode, len(base)+len(path))
+				copy(np, base)
+				copy(np[len(base):], path)
+				stack.SetPath(np)
+			}
 		}
 	})
 }
 
 func (f *WithBaseDecorator) logBaseInfo(g *groups) {
-	if f.Verbose > 1 {
-		log.Printf("all stacks are grouped into %d groups by base nodes (depth=%d)", len(g.G), f.BaseCount)
-	}
-	if f.Verbose > 2 {
-		for i, count := range g.Count {
-			if count > 0 {
-				log.Printf("\t%d samples counted %d base nodes", count, i)
-			}
-		}
+	if f.Verbose > 0 {
+		log.Printf("all stacks are grouped into %d groups by base nodes (depth=%d)", len(g.Base), f.BaseCount)
 	}
 }
