@@ -37,9 +37,6 @@ func Fix(p interfaces.Profile, option FixOption) {
 
 func buildFixer(option FixOption) interfaces.StackFixer {
 	var middle []FixerDecorator
-	if option.MinDepth > 0 {
-		middle = append(middle, &FixDeeperStacksDecorator{&option})
-	}
 
 	if option.Verbose > 0 {
 		middle = append(middle, &ShowFixInfoDecorator{&option})
@@ -49,8 +46,13 @@ func buildFixer(option FixOption) interfaces.StackFixer {
 		middle = append(middle, &WithBaseDecorator{&option})
 	}
 
+	if option.MinDepth > 0 {
+		middle = append(middle, &FixDeeperStacksDecorator{&option})
+	}
+
 	var fixer interfaces.StackFixer = &guess.CommonRootFixer{MinOverlaps: option.Overlap}
-	for _, m := range middle {
+	for i := len(middle) - 1; i >= 0; i-- {
+		m := middle[i]
 		fixer = m.Decorate(fixer)
 	}
 	return fixer
