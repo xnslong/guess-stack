@@ -4,6 +4,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path"
 
 	"github.com/xnslong/guess-stack/core"
 	"github.com/xnslong/guess-stack/utils"
@@ -20,6 +21,8 @@ func main() {
 }
 
 func FixProfile() {
+	printVersion()
+
 	p := &Profile{}
 	InputProfile(p)
 
@@ -31,6 +34,12 @@ func FixProfile() {
 	})
 
 	OutputProfile(p)
+}
+
+func printVersion() {
+	if *verboseCounter > 0 {
+		log.Printf("program: %s @%s", path.Base(os.Args[0]), core.Version)
+	}
 }
 
 func InputProfile(p *Profile) {

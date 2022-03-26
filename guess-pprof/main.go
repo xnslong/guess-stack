@@ -3,6 +3,8 @@ package main
 import (
 	"io"
 	"log"
+	"os"
+	"path"
 
 	"github.com/xnslong/guess-stack/core"
 	"github.com/xnslong/guess-stack/utils"
@@ -21,6 +23,8 @@ func main() {
 }
 
 func FixProfile() {
+	printVersion()
+
 	p := OpenProfile()
 
 	core.Fix(p, core.FixOption{
@@ -33,12 +37,18 @@ func FixProfile() {
 	WriteProfile(p)
 }
 
+func printVersion() {
+	if *verboseCounter > 0 {
+		log.Printf("program: %s @%s\n", path.Base(os.Args[0]), core.Version)
+	}
+}
+
 func WriteProfile(p *Profile) {
 	err := utils.WriteToFile(*outputFile, func(writer io.Writer) error {
 		return p.WriteTo(writer)
 	})
 	if err != nil {
-		log.Panic("write profile error", err)
+		log.Fatalf("write profile error: %v", err)
 	}
 
 	if *verboseCounter > 0 {
@@ -53,7 +63,7 @@ func OpenProfile() *Profile {
 		return p.ReadFrom(reader)
 	})
 	if err != nil {
-		log.Panic("open profile error", err)
+		log.Fatalf("read profile error: %v", err)
 	}
 
 	if *verboseCounter > 0 {
