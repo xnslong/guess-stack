@@ -8,6 +8,7 @@ type StackFixer interface {
 
 type StackNode interface {
 	EqualsTo(another StackNode) bool
+	HashCode() int
 }
 
 type Stack interface {

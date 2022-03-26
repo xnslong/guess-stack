@@ -11,6 +11,14 @@ import (
 
 type stackElement string
 
+func (s stackElement) HashCode() int {
+	r := 0
+	for _, v := range s {
+		r = r*31 + int(v)
+	}
+	return r
+}
+
 func (s stackElement) EqualsTo(another interfaces.StackNode) bool {
 	se, ok := another.(stackElement)
 	if !ok {

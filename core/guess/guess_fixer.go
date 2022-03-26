@@ -2,10 +2,8 @@ package guess
 
 import (
 	"sort"
-	"sync"
 
 	"github.com/xnslong/guess-stack/core/interfaces"
-	"github.com/xnslong/guess-stack/utils"
 )
 
 type CommonRootFixer struct {
@@ -120,21 +118,16 @@ func updateRootForGroup(computePaths []*computePath, root []interfaces.StackNode
 }
 
 func computeJoints(paths []*computePath) {
-	p := utils.NewPool(100)
+	var stacks []interfaces.Stack
+	var joints []*joint
 
-	wg := &sync.WaitGroup{}
 	for _, path := range paths {
-		wg.Add(1)
-		p0 := path
-
-		p.Submit(func() {
-			computeJoint(p0, paths)
-			wg.Done()
-		})
+		stacks = append(stacks, path.Stack)
+		joints = append(joints, path.joint)
 	}
-	p.Close()
 
-	wg.Wait()
+	transformedStacks := transform(stacks)
+	computeStackJoints(transformedStacks, joints)
 }
 
 func computeJoint(path *computePath, stacks []*computePath) {
