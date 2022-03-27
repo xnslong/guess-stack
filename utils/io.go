@@ -13,13 +13,13 @@ func WriteToFile(file string, write func(writer io.Writer) error) error {
 	if file == DefaultStream {
 		out = os.Stdout
 	} else {
-		file, err := os.OpenFile(file, os.O_CREATE|os.O_WRONLY, 0644)
+		outFile, err := os.OpenFile(file, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 		if err != nil {
 			return fmt.Errorf("open output file error: %w", err)
 		}
 
-		defer file.Close()
-		out = file
+		defer outFile.Close()
+		out = outFile
 	}
 
 	return write(out)
@@ -30,12 +30,12 @@ func ReadFromFile(file string, read func(reader io.Reader) error) error {
 	if file == DefaultStream {
 		in = os.Stdin
 	} else {
-		file, err := os.OpenFile(file, os.O_RDONLY, 0644)
+		inFile, err := os.OpenFile(file, os.O_RDONLY, 0644)
 		if err != nil {
 			return fmt.Errorf("open input file error: %w", err)
 		}
-		defer file.Close()
-		in = file
+		defer inFile.Close()
+		in = inFile
 	}
 
 	return read(in)
