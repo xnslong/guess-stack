@@ -6,8 +6,6 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-const Version = "1.0.1"
-
 var (
 	inputFile = kingpin.Flag("input", "input pprof file. \"-\" means read from the standard input stream").
 			Short('i').
