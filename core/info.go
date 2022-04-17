@@ -1,6 +1,6 @@
 package core
 
 const (
-	Version = "1.0.8-SNAPSHOT"
+	Version = "1.0.8"
 	Author  = "xnslong"
 )
