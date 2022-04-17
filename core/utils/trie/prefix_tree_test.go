@@ -42,25 +42,25 @@ func TestNewTrie(t *testing.T) {
 	})
 
 	t.Run("common_path", func(t *testing.T) {
-		path := pt.MaxCommonPath([]interface{}{1, 2, 4, 5})
+		path := pt.PrefixFor([]interface{}{1, 2, 4, 5})
 		assert.Equal(t, []interface{}{1, 2}, elements(path))
 
-		path2 := pt.MaxCommonPath([]interface{}{1, 2, 3, 5})
+		path2 := pt.PrefixFor([]interface{}{1, 2, 3, 5})
 		assert.Equal(t, []interface{}{1, 2, 3}, elements(path2))
 	})
 
 	t.Run("attach", func(t *testing.T) {
-		path2 := pt.MaxCommonPath([]interface{}{1, 2, 3, 4})
+		path2 := pt.PrefixFor([]interface{}{1, 2, 3, 4})
 		for _, node := range path2 {
 			assert.Nil(t, node.Attachment())
 		}
 
-		path := pt.MaxCommonPath([]interface{}{1, 2, 3, 4, 5})
+		path := pt.PrefixFor([]interface{}{1, 2, 3, 4, 5})
 		for i, node := range path {
 			node.Attach(i)
 		}
 
-		path3 := pt.MaxCommonPath([]interface{}{1, 2, 3, 4})
+		path3 := pt.PrefixFor([]interface{}{1, 2, 3, 4})
 		for i, node := range path3 {
 			assert.Equal(t, i, node.Attachment())
 		}

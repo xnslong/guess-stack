@@ -2,7 +2,7 @@ package trie
 
 type Trie interface {
 	AddPath(path []interface{}, target interface{})
-	MaxCommonPath([]interface{}) []Node
+	PrefixFor([]interface{}) []Node
 	VisitAllPath(f func(path []Node, target interface{}))
 }
 
@@ -37,7 +37,7 @@ func (t *trie) AddPath(path []interface{}, target interface{}) {
 	n.targets = append(n.targets, target)
 }
 
-func (t *trie) MaxCommonPath(i []interface{}) []Node {
+func (t *trie) PrefixFor(i []interface{}) []Node {
 	n := t.root
 
 	path := make([]Node, 0)

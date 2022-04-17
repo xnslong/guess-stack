@@ -24,6 +24,14 @@ func newTransformer() *transformer {
 	}
 }
 
+// transformer transforms interfaces.StackNode to *idStackNode.
+//
+// For example, any 2 input node n1 and n2, where
+//    n1.HashCode() == n2.HashCode()
+//    n1.EqualsTo(n2)
+// Then they will get the same *idStackNode pointer, so that they are comparable with the "==" and "!=" method.
+//    t.intern(n1) == t.intern(n2)
+// The Transform method will transfer all elements in the stacks into the *idStackNode type.
 type transformer struct {
 	nodes map[int][]*idStackNode
 }
