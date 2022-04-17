@@ -233,7 +233,7 @@ func computeJointsWithTrie(stacks []interfaces.Stack, idStacks []*idStack, joint
 		for len(path) > 0 {
 			path = path[1:]
 			offset := len(path)
-			nodes := t.MaxCommonPath(path)
+			nodes := t.PrefixFor(path)
 			for _, node := range nodes {
 				update(node, i, offset)
 			}
