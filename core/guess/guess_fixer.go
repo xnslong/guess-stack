@@ -4,6 +4,7 @@ import (
 	"sort"
 
 	"github.com/xnslong/guess-stack/core/interfaces"
+	"github.com/xnslong/guess-stack/core/utils/trie"
 )
 
 type CommonRootFixer struct {
@@ -126,8 +127,8 @@ func computeJoints(paths []*computePath) {
 		joints = append(joints, path.joint)
 	}
 
-	transformedStacks := transform(stacks)
-	computeStackJoints(transformedStacks, joints)
+	transformedStacks := defaultTransformer.Transform(stacks)
+	computeJointsWithTrie(stacks, transformedStacks, joints)
 }
 
 func computeJoint(path *computePath, stacks []*computePath) {
@@ -215,4 +216,65 @@ func commonPrefixLen(a1, a2 []interfaces.StackNode, s int) int {
 	}
 
 	return m
+}
+
+func computeJointsWithTrie(stacks []interfaces.Stack, idStacks []*idStack, joints []*joint) {
+	t := trie.NewTrie()
+
+	for i, s := range idStacks {
+		if stacks[i].NeedFix() {
+			path := s.Stack()
+			t.AddPath(path, i)
+		}
+	}
+
+	for i, s := range idStacks {
+		path := s.Stack()
+		for len(path) > 0 {
+			path = path[1:]
+			offset := len(path)
+			nodes := t.MaxCommonPath(path)
+			for _, node := range nodes {
+				update(node, i, offset)
+			}
+		}
+	}
+
+	t.VisitAllPath(func(path []trie.Node, target interface{}) {
+		pathIdx := target.(int)
+		for i := len(path) - 1; i >= 0; i-- {
+			node := path[i]
+			joinPathIdx, joinOffset := getJoint(node)
+			if joinPathIdx != nonExistIndex {
+				joints[pathIdx].JoinPathIdx = joinPathIdx
+				joints[pathIdx].JoinNodeIdx = joinOffset
+				joints[pathIdx].Overlaps = i + 1
+				return
+			}
+		}
+	})
+}
+
+type cover struct {
+	index  int
+	offset int
+}
+
+func getJoint(t trie.Node) (index, offset int) {
+	c, ok := t.Attachment().(*cover)
+	if !ok || c == nil {
+		return nonExistIndex, 0
+	}
+
+	return c.index, c.offset
+}
+
+func update(n trie.Node, index int, offset int) {
+	path, _ := getJoint(n)
+	if path == nonExistIndex {
+		n.Attach(&cover{
+			index:  index,
+			offset: offset,
+		})
+	}
 }

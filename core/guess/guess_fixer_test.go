@@ -41,25 +41,29 @@ func TestCommonRootFixer_FixOnMinOverlaps(t *testing.T) {
 		{8, 9, 10, 11, 12, 13},
 	}
 
-	c1 := mock.MakePath(paths)
-	(&CommonRootFixer{1}).Fix(c1)
-	assert.Equal(t, [][]int{
-		{1, 2, 3, 4, 5, 6, 7},
-		{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
-		{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-		{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
-	}, mock.PathToArray(c1))
-	mock.Print(c1)
+	t.Run("min_overlaps_1", func(t *testing.T) {
+		c1 := mock.MakePath(paths)
+		(&CommonRootFixer{1}).Fix(c1)
+		assert.Equal(t, [][]int{
+			{1, 2, 3, 4, 5, 6, 7},
+			{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
+			{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+			{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
+		}, mock.PathToArray(c1))
+		mock.Print(c1)
+	})
 
-	c2 := mock.MakePath(paths)
-	(&CommonRootFixer{5}).Fix(c2)
-	assert.Equal(t, [][]int{
-		{1, 2, 3, 4, 5, 6, 7},
-		{4, 5, 6, 7, 8, 9, 10, 11, 12},
-		{4, 5, 6, 7, 8, 9, 10},
-		{4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
-	}, mock.PathToArray(c2))
-	mock.Print(c2)
+	t.Run("min_overlaps_5", func(t *testing.T) {
+		c2 := mock.MakePath(paths)
+		(&CommonRootFixer{5}).Fix(c2)
+		assert.Equal(t, [][]int{
+			{1, 2, 3, 4, 5, 6, 7},
+			{4, 5, 6, 7, 8, 9, 10, 11, 12},
+			{4, 5, 6, 7, 8, 9, 10},
+			{4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
+		}, mock.PathToArray(c2))
+		mock.Print(c2)
+	})
 }
 
 func TestCommonRootFixer_SelectiveFix(t *testing.T) {
