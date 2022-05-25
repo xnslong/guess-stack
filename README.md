@@ -45,12 +45,12 @@ The previous tools are working based on the following core module.
 guess-pprof
 
 ```bash
-go get github.com/xnslong/guess-stack/guess-pprof
+go install github.com/xnslong/guess-stack/guess-pprof@latest
 ```
 
 guess-fold
 
 ```bash
-go get github.com/xnslong/guess-stack/guess-fold
+go install github.com/xnslong/guess-stack/guess-fold@latest
 ```
 
