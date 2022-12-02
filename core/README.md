@@ -198,7 +198,7 @@ This limitation can be summed up as following:
 1. Self-overlap should not be allowed.
 2. A stack cannot share the root from other stack where it has transitively shared root from the current stack.
 
-## Introduce prefix tree to reduce complexity from $O\(n^2)$ to O(n)
+## Introduce prefix tree to reduce complexity from $O\(n^2)$ to $O\(n\)$
 
 In the analysis above, we have to compare a stack to all other stacks to find out the best match. Suppose we have `n`
 stacks in total, and comparing one stack to another to calculate the `MORL` for the 2 stacks to be a basic operation.
